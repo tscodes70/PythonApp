@@ -2,8 +2,9 @@ import nltk
 import csv
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
-# Prepare VADER Library
+# Prepare VADER trained models
 nltk.download('vader_lexicon')
+# nltk.download('movie_reviews')
 
 FILENAME = "data.csv"
 ENCODING = "utf8"
@@ -19,7 +20,7 @@ def loadData(filename: str) -> list:
     with open(filename, encoding=ENCODING) as f:
         reader = csv.DictReader(f)
         for row in reader:
-            dataList.append(row['reviews.title'])      
+            dataList.append(row['reviews.text'])      
     return dataList
 
 
