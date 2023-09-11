@@ -1,0 +1,28 @@
+/* Style for Header in webpage */
+.header{
+    padding: 40px;
+    text-align: center;
+    background: #164A41;
+    color: white;
+    font-size:22px;
+    color: #DDE0DF;
+}
+/* Style for Nav Bar */
+.form-control{
+	box-shadow: none;
+	font-weight: normal;
+	font-size: 13px;
+}
+body{
+    font-family: 'Varela Round', sans-serif;
+    color: white;
+}
+input[type=text], select {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
