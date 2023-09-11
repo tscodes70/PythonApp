@@ -2,10 +2,16 @@
 {% extends "base.html" %}
 
 {% block head %}
-<h1>Testing Page</h1>
-{% endblock %}
-
-{% block body %}
-<p>this is a testing page</p>
-
-{% endblock %}
+<head>
+    <link rel="stylesheet" href="static/css/main.css">
+</head>
+<div class="header" style="background-color: #005580;">
+    <h2>Upload the dataset below</h2>
+    <h2 style="text-align:center;">Hotel Review Sentiment Analysis</h2>
+</div>
+<br>
+<form action = "/success" method = "post" enctype="multipart/form-data">  
+    <input type="file" name="file" />  
+    <input type = "submit" value="Upload">  
+</form>
+{% endblock %}  
