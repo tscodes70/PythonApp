@@ -1,57 +1,98 @@
 import nltk
-import csv
+import csv, pandas as pd
+from nltk.tokenize import word_tokenize
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
-# Prepare VADER trained models
+# Prepare VADER pre-trained model
+nltk.download('punkt')
 nltk.download('vader_lexicon')
-# nltk.download('movie_reviews')
 
 FILENAME = "data.csv"
 ENCODING = "utf8"
-PSENTIMENT = 0.05
-NSENTIMENT = -0.05
 
-def totalRows(filename):
-    with open(filename, encoding=ENCODING) as f:
-        print(sum(1 for line in f))
+OUTPUTFILE = 'outputdata.csv'
+# PSENTIMENT = 0.05
+# NSENTIMENT = -0.05
 
-def loadData(filename: str) -> list:
-    dataList = []
-    with open(filename, encoding=ENCODING) as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            dataList.append(row['reviews.text'])      
-    return dataList
+#CSV Headers
+HOTELNAME =  "name"
+HOTELPROVINCE = "province"
+HOTELPOSTALCODE = "postalCode"
+HOTELPCATEGORY = "categories"
+HOTELSCATEGORY = "primaryCategories"
+HOTELREVIEWS = "reviews.text"
+HOTELRATING = "reviews.rating"
 
+RATINGMAX = 5
 
-def nltkAnalyzer(reviewstxt:list[str]):
+def nltkAnalyzer(processedData):
     """
     This functions takes in a List of text reviews
     and analyzes them using the VADER Sentiment Analysis
     which is using the Natural Language ToolKit(NLTK)
-    and prints the sentiment scores of the reviews
+    and prints the compound sentiment scores of the reviews
+    70% Accuracy
+    """
+     # Initialize the sentiment analyzer
+    sia = SentimentIntensityAnalyzer()
+
+    # Tokenize and analyze the reviews
+    processedData['Sentiment Scores'] = processedData['Review'].apply(lambda x: sia.polarity_scores(x))
+
+    # Extract sentiment scores
+    processedData['Compound Sentiment'] = processedData['Sentiment Scores'].apply(lambda x: x['compound'])
+
+    outputCsv(processedData[['Hotel Name', 'Province', 'Postal','Category','SubCategory', 'Compound Sentiment', 'Total Reviews', 'Average Rating']])
+    
+    # Cannot output reviews in csv as excel has char limit of 32k
+    # outputCsv(processedData[['Hotel Name', 'Province', 'Postal', 'Review', 'Compound Sentiment', 'Total Reviews']])
+
+def processDataFromCsv(csvFilename):
+    HotelName,HotelProvince,HotelPostal,HotelPrimaryCategory,HotelSubCategory,HotelReviews,HotelRating = [], [], [], [], [], [],[]
+
+    with open(csvFilename, encoding=ENCODING) as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            HotelName.append(row[HOTELNAME])
+            HotelProvince.append(row[HOTELPROVINCE])
+            HotelPostal.append(row[HOTELPOSTALCODE])
+            HotelPrimaryCategory.append(row[HOTELPCATEGORY])
+            HotelSubCategory.append(row[HOTELSCATEGORY])
+            HotelReviews.append(row[HOTELREVIEWS])
+            HotelRating.append(float(row[HOTELRATING]))
+
+    data = {
+    'Hotel Name': HotelName,
+    'Province': HotelProvince,
+    'Postal':HotelPostal,
+    'Category':HotelPrimaryCategory,
+    'SubCategory':HotelSubCategory,
+    'Review': HotelReviews,
+    'Average Rating': HotelRating
+    }
+    df = pd.DataFrame(data)
+    """
+        Used chatgpt to generate {'Review': lambda x: '<SPLIT> '.join(x), 'Average Rating': 'mean'}
+        Reason: Encountering alot of errors & unsure of the formatting when applying 2 functions 
+        while only resetting index once to dataframe.
+
+        Original statement pre-chatgpt commented.
 
     """
-    vaderAnalyzer = SentimentIntensityAnalyzer()
+    groupedData = df.groupby(['Hotel Name', 'Province', 'Postal', 'Category', 'SubCategory']).agg({'Review': lambda x: '<SPLIT> '.join(x), 'Average Rating': 'mean'}).reset_index()
+    #groupedData = df.groupby(['Hotel Name', 'Province','Postal','Category','SubCategory'])['Review'].agg(lambda x: '<SPLIT> '.join(x)).reset_index()
+    
+    # Formatting for output csv
+    groupedData['Average Rating'] = groupedData['Average Rating'].round(2)
+    groupedData['Total Reviews'] = groupedData['Review'].apply(lambda x: len(x.split('<SPLIT> ')))
 
-    # Analyze each review
-    for review in reviewstxt:
-        sentiment_scores = vaderAnalyzer.polarity_scores(review)
-        print(f"Review: {review}")
-        print(f"Sentiment Scores: {sentiment_scores}")
+    nltkAnalyzer(groupedData)
 
-        # Determine sentiment by calculating compound score
-        compound_score = sentiment_scores['compound']
-        if compound_score >= PSENTIMENT:
-            sentiment = "Positive"
-        elif compound_score <= NSENTIMENT:
-            sentiment = "Negative"
-        else:
-            sentiment = "Neutral"
-        print(f"Sentiment: {sentiment}\n")
-
+def outputCsv(data):
+    data.to_csv(OUTPUTFILE)
+    
 def main():
-    reviewstxt = loadData(FILENAME)
-    nltkAnalyzer(reviewstxt)
+    processDataFromCsv(FILENAME)
     
 main()
+
