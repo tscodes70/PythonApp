@@ -1,1 +1,30 @@
 <!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+            <link rel="stylesheet" href="styles.css">
+    </head>
+<body class="loginbdy">
+    <form class="loginform" action="login.php" method="post">
+    
+      <div class="containerLogin">
+        <label for="username"><b>Username</b></label>
+        <input class="logininput" type="text" placeholder="Enter Username" name="username" required>
+    
+        <label for="password"><b>Password</b></label>
+        <input class="logininput" type="password" placeholder="Enter Password" name="password" required>
+    
+        <button class="loginbtn" type="submit" >Login</button>
+        <label>
+          <input type="checkbox" checked="checked" name="remember"> Remember me
+        </label>
+        
+      </div> 
+      <div>
+
+      <a href="reset_password.php">Forgot password?</a><a> or</a>
+       <a href="http://localhost/SWAPproject/webpage/Registerpage.php">Register</a>
+      </div>
+    </form>
+    
+    </body>
+    </html>
