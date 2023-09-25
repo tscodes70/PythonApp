@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block head %}
+<head>
+    <title>DashBoard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>Pie Chart</h1>
+    <h3>Catergories of the accomodations</h3>
+    <div>{{ pie_chart_div|safe }}</div>
+</body>
+{% endblock %}
