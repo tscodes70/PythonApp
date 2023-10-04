@@ -6,6 +6,7 @@ import os
 from werkzeug.utils import secure_filename
 import subprocess
 import plotly.graph_objs as go
+import plotly.express as px
 
 from flask import Flask, render_template
 # import analyze
@@ -22,8 +23,18 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 app.secret_key = 'This is your secret key to utilize session in Flask'
 
+# navigation page
+@app.route('/')
+def navigation():
+    return render_template('navigation.html')
+
+# navigate to index page of web app
+@app.route('/index')
+def index():
+    return render_template('index.html')
+
 # upload the file into the local folder
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/upload_file', methods=['GET', 'POST'])
 def uploadFile():
 	if request.method == 'POST':
 	# upload file flask
@@ -102,9 +113,11 @@ def categoriseData():
     # Create a new DataFrame with the new rows
     new_df = pd.DataFrame(new_rows)
     
-    # replace any string with "hotel" with hotels
+    # replace any string with "motel" with motels
     new_df[target_column] = new_df[target_column].apply(lambda x: 'motels' if 'motel' in x.lower() else x)
+    # replace any string with "hotel" with hotels
     new_df[target_column] = new_df[target_column].apply(lambda x: 'hotels' if 'hotel' in x.lower() else x)
+    # replace any string with "lodging" with lodgings
     new_df[target_column] = new_df[target_column].apply(lambda x: 'lodgings' if 'lodging' in x.lower() else x)
     
     # Use the drop_duplicates() method to remove duplicate rows
@@ -115,6 +128,7 @@ def categoriseData():
     
     return redirect(url_for('dataVisualisation'))
 
+# create the charts 
 @app.route('/data_visualisation')
 def dataVisualisation():
 	# Load the CSV data into a Pandas DataFrame
@@ -128,8 +142,12 @@ def dataVisualisation():
 
     # Convert the chart to an HTML div
     pie_chart_div = pie_chart.to_html(full_html=False)
-
-    return render_template('dashboard.html', pie_chart_div=pie_chart_div)
+    
+    ratingColumn = 'Average Rating'
+    histogram = px.histogram(df, x=ratingColumn, title=f'Histogram of Average Rating')
+    histogram_div = histogram.to_html()
+    
+    return render_template('dashboard2.html', pie_chart_div=pie_chart_div, histogram_div=histogram_div)
 
 if __name__ == '__main__':
 	app.run(debug=True)
