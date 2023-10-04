@@ -2,6 +2,7 @@ import nltk
 import csv, pandas as pd
 from nltk.tokenize import word_tokenize
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from heapq import nlargest
 
 # Prepare VADER pre-trained model
@@ -26,6 +27,27 @@ REVIEWTITLE = "reviews.title"
 HOTELRATING = "reviews.rating"
 
 RATINGMAX = 5
+
+def tfidfAnalyzer(reviewList):
+    """
+    This function analyzes the facilities of the hotel
+    then correlates to the sentiment analysis of the hotel
+    to find which facilities are factors that potentially
+    makes the hotel more appealable.
+    """
+    # Create a TF-IDF vectorizer
+    tfidf_vectorizer = TfidfVectorizer(stop_words='english')
+    df = pd.DataFrame({'Review': reviewList})
+    tfidf_matrix = tfidf_vectorizer.fit_transform(df['Review'])
+    tfidf_df = pd.DataFrame(tfidf_matrix.toarray(), columns=tfidf_vectorizer.get_feature_names_out())
+    sumdf = tfidf_df.sum()
+    # sum_df.columns = ["Keywords"]
+    slist = sorted(list(zip(tfidf_df.columns.tolist(),sumdf.tolist())),key=lambda x:x[1],reverse=True)
+
+    with open("output2.csv", "a+", newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(slist)
+    
 
 def nltkAnalyzer(processedData) -> None:
     """
@@ -66,19 +88,27 @@ def getIndividualReviewSA(processedData):
     sia = SentimentIntensityAnalyzer()
     
     summary = []
+    keywords = []
+
     for reviewsGroupedByHotel in processedData['Review Summary']:
         sentimentScores = []
 
         reviewList = reviewsGroupedByHotel.split('<SPLIT>')
         for review in reviewList:
             sentimentScores.append(sia.polarity_scores(review))
-   
+        
+        # Retrieving top keywords associated with top reviews
+        # keywords.append(tfidfAnalyzer(reviewList))
+        tfidfAnalyzer(reviewList)
+
+        # Retrieving top 4 reviews for each hotel
         rankedReviews = sorted(enumerate(sentimentScores), key=lambda x: x[1]['compound'], reverse=True)
         summary_length = 4  # Adjust the length of the summary as needed
         top_sentences = nlargest(summary_length, rankedReviews, key=lambda x: x[1]['compound'])
         summary.append([reviewList[index] for index, _ in sorted(top_sentences)])
 
     processedData['Review Summary'] = summary
+    print(keywords)
     return processedData
     
 
@@ -134,5 +164,8 @@ def main():
     data = processDataFromCsv(FILENAME)
     nltkAnalyzer(data)
     
-main()
+try:       
+    main()
 
+except Exception as e:
+    print("awfnsepgpgspegpwg")
