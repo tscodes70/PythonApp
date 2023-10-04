@@ -23,8 +23,18 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 app.secret_key = 'This is your secret key to utilize session in Flask'
 
+# navigation page
+@app.route('/')
+def navigation():
+    return render_template('navigation.html')
+
+# navigate to index page of web app
+@app.route('/index')
+def index():
+    return render_template('index.html')
+
 # upload the file into the local folder
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/upload_file', methods=['GET', 'POST'])
 def uploadFile():
 	if request.method == 'POST':
 	# upload file flask
