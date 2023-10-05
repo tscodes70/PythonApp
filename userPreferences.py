@@ -25,7 +25,11 @@ def openCsv():
     df = pd.read_csv('outputdata.csv', index_col=0)
     return df
 
-@app.route('/', methods=("POST", "GET"))
+@app.route('/')
+def navigation():
+    return render_template('userDashboard.html')
+
+@app.route('/table', methods=("POST", "GET"))
 def index():
     df = openCsv()
     column_val = df.columns.values
