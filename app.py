@@ -11,7 +11,7 @@ import plotly.express as px
 from flask import Flask, render_template
 # import analyze
 
-UPLOAD_FOLDER = os.path.join('dataset', 'uploads')
+UPLOAD_FOLDER = os.path.join('dataset')
 
 # Define allowed files
 ALLOWED_EXTENSIONS = {'csv'}

@@ -12,11 +12,17 @@
         <input type = "submit" value="Upload"> 
     </form>
     <p style="color:green;"> File uploaded successfully!! </p>
-  <form action="/show_data" target="_blank">
-        <input type="submit" value="Show Raw CSV"/>
-    </form>
+    <p style="color:blue;">View insights and summaries:</p>
     <form action="/analyze" target="_blank">
-        <input type="submit" value="View data statistics"/>
+        <input type="submit" value="View dashboard"/>
+    </form>
+    <p style="color:blue;">View Raw Dataset:</p>
+    <form action="/show_data" target="_blank">
+        <input type="submit" value="Show Raw CSV" />
+    </form>
+    <p style="color:blue;">View Clean Dataset:</p>
+    <form action="" target="_blank">
+        <input type="submit" value="Show Clean CSV" />
     </form>
 </body> 
 {% endblock %}
