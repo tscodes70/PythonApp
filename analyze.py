@@ -1,20 +1,21 @@
-import nltk
 import csv, pandas as pd
+import nltk
 from nltk.tokenize import word_tokenize
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from heapq import nlargest
+import sys, os
 
-# Prepare VADER pre-trained model
+# Prepare VADER downloadables
 nltk.download('punkt')
 nltk.download('vader_lexicon')
+nltk.download('stopwords')
 
-FILENAME = "data.csv"
+INPUTFILE = "data.csv"
 ENCODING = "utf8"
 
 OUTPUTFILE = 'outputdata.csv'
-# PSENTIMENT = 0.05
-# NSENTIMENT = -0.05
 
 #CSV Headers
 HOTELNAME =  "name"
@@ -27,101 +28,144 @@ REVIEWTITLE = "reviews.title"
 HOTELRATING = "reviews.rating"
 
 RATINGMAX = 5
+SUMMARYLENGTH = 4  # Adjust the length of the summary as needed
+OUTPUTHEADER = ['Hotel Name', 'Province', 'Postal','Category','SubCategory', 'Compound Sentiment', 'Review Summary', 'Total Reviews', 'Popular Keywords','Average Rating']
 
-def tfidfAnalyzer(reviewList):
+def getKeywords(hotelReviewList:list) -> list:
     """
-    This function analyzes the facilities of the hotel
-    then correlates to the sentiment analysis of the hotel
-    to find which facilities are factors that potentially
-    makes the hotel more appealable.
+    Retrieves and returns the top keywords of a list of reviews
+    for a single Hotel
+
+    Parameters:
+    hotelReviewList (list): A list of reviews for a single hotel
+
+    Returns:
+    A sorted list of keywords based on frequency in descending order
     """
-    # Create a TF-IDF vectorizer
+    testremovestop = []
+    # Remove Stop words
+    for item in hotelReviewList:
+        # Tokenize the text
+        words = nltk.word_tokenize(item)
+
+        # Get a list of English stop words
+        stop_words = set(stopwords.words('english'))
+
+        # Remove stop words from the text
+        filtered_words = [word for word in words if word.lower() not in stop_words]
+
+        # Join the filtered words back into a sentence
+        filtered_text = ' '.join(filtered_words)
+        testremovestop.append(filtered_text)
+
     tfidf_vectorizer = TfidfVectorizer(stop_words='english')
-    df = pd.DataFrame({'Review': reviewList})
+    df = pd.DataFrame({'Review': testremovestop})
     tfidf_matrix = tfidf_vectorizer.fit_transform(df['Review'])
     tfidf_df = pd.DataFrame(tfidf_matrix.toarray(), columns=tfidf_vectorizer.get_feature_names_out())
-    sumdf = tfidf_df.sum()
-    # sum_df.columns = ["Keywords"]
-    slist = sorted(list(zip(tfidf_df.columns.tolist(),sumdf.tolist())),key=lambda x:x[1],reverse=True)
+    return sorted(list(zip(tfidf_df.columns.tolist(),tfidf_df.sum().tolist())),key=lambda x:x[1],reverse=True)[:5]
 
-    with open("output2.csv", "a+", newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(slist)
-    
 
-def nltkAnalyzer(processedData) -> None:
-    """
-    This functions takes in a List of text reviews
-    and analyzes them using the VADER Sentiment Analysis
-    which is using the Natural Language ToolKit(NLTK)
-    and prints the compound sentiment scores of the reviews
-    70% Accuracy
-    """
-    # Initialize the sentiment analyzer
-    sia = SentimentIntensityAnalyzer()
-    # Tokenizing and analyzing reviews (for each hotel, concatted reviews)
-    processedData['Sentiment Scores'] = processedData['Review'].apply(lambda x: sia.polarity_scores(x))
-    # Retrieve Comp Senti
-    processedData['Compound Sentiment'] = processedData['Sentiment Scores'].apply(lambda x: x['compound'])
 
-    # Tokenizing and analyzing each review (for Review Summarization)
-    processedData = getIndividualReviewSA(processedData)
-        
-    # Formatting for output csv
-    processedData['Average Rating'] = processedData['Average Rating'].round(2)
-    processedData['Total Reviews'] = processedData['Review'].apply(lambda x: len(x.split('<SPLIT> ')))
-    
-    outputCsv(processedData[['Hotel Name', 'Province', 'Postal','Category','SubCategory', 'Compound Sentiment', 'Review Summary', 'Total Reviews', 'Average Rating']])
-    
-    # Cannot output reviews in csv as excel has char limit of 32k
-    # outputCsv(processedData[['Hotel Name', 'Province', 'Postal', 'Review', 'Compound Sentiment', 'Total Reviews']])
+def analyzeIndividualReviews(processedData:pd.DataFrame,sia:SentimentIntensityAnalyzer):
+    """
+    Analyzes individual reviews using VADER Sentiment Analysis then
+    1. Summarizes top 4 hotel reviews.
+    2. Retrieves top 5 Keywords of hotel reviews
 
-def getIndividualReviewSA(processedData):
+    This function performs a analysis of individual hotel reviews by summarizing top 4 hotel reviews
+    and calling the 'getKeywords' function to extract top 5 keywords of reviews. Finally, both
+    of these data are added into the intial Dataframe
+
+    Parameters:
+    processedData (pd.DataFrame): A Pandas Dataframe of individual hotel reviews to be analyzed.
+    sia (SentimentIntensityAnalyzer): A initialized SentimentIntensityAnalyzer
+
+    Returns:
+    None
     """
-    This function analyzes each individual review using the
-    VADER Sentiment Analysis
-    which is using the Natural Language ToolKit(NLTK)
-    retrieves the top 4 reviews by sorting the compounded sentiment,
-    then generates a summary using these 4 reviews.
-    """
-    # Initialize the sentiment analyzer
-    sia = SentimentIntensityAnalyzer()
-    
-    summary = []
-    keywords = []
+    reviewSummaryOfHotel,keywordOfHotelReview = [],[]
 
     for reviewsGroupedByHotel in processedData['Review Summary']:
         sentimentScores = []
 
-        reviewList = reviewsGroupedByHotel.split('<SPLIT>')
-        for review in reviewList:
+        reviewListEachHotel = reviewsGroupedByHotel.split('<SPLIT>')
+        for review in reviewListEachHotel:
             sentimentScores.append(sia.polarity_scores(review))
         
         # Retrieving top keywords associated with top reviews
-        # keywords.append(tfidfAnalyzer(reviewList))
-        tfidfAnalyzer(reviewList)
+        keywordOfHotelReview.append(getKeywords(reviewListEachHotel))
 
         # Retrieving top 4 reviews for each hotel
         rankedReviews = sorted(enumerate(sentimentScores), key=lambda x: x[1]['compound'], reverse=True)
-        summary_length = 4  # Adjust the length of the summary as needed
-        top_sentences = nlargest(summary_length, rankedReviews, key=lambda x: x[1]['compound'])
-        summary.append([reviewList[index] for index, _ in sorted(top_sentences)])
+       
+        top_sentences = nlargest(SUMMARYLENGTH, rankedReviews, key=lambda x: x[1]['compound'])
+        reviewSummaryOfHotel.append([reviewListEachHotel[index] for index, _ in sorted(top_sentences)])
 
-    processedData['Review Summary'] = summary
-    print(keywords)
-    return processedData
-    
+    processedData["Popular Keywords"],processedData['Review Summary'] = keywordOfHotelReview,reviewSummaryOfHotel
 
-
-def processDataFromCsv(csvFilename:str):
+def analyzeConcatReviews(processedData:pd.DataFrame) -> pd.DataFrame:
     """
-    This function reads data from a csv,
-    then puts it into a pandas dataframe
-    and returns the dataframe
+    Analyzes a list of text reviews using VADER Sentiment Analysis.
+
+    This function takes in a list of text reviews and analyzes them
+    using the VADER Sentiment Analysis tool, which is implemented
+    using the Natural Language Toolkit (NLTK). 
+    
+    It calculates the compound sentiment scores the reviews of each 
+    hotel, formats them and returns a Pandas Dataframe containing 
+    ['Hotel Name', 'Province', 'Postal','Category','SubCategory', 'Compound Sentiment', 
+    'Review Summary', 'Total Reviews', 'Popular Keywords','Average Rating']
+
+    Parameters:
+    reviews (list of str): A list of text reviews to be analyzed.
+
+    Returns:
+    processedData (pd.Dataframe): A Pandas Dataframe after analyzing
+    """
+
+    sia = SentimentIntensityAnalyzer()
+    # Tokenizing and analyzing reviews (for each hotel, concatted reviews)
+    processedData['Sentiment Scores'] = processedData['Review'].apply(lambda x: sia.polarity_scores(x))
+    # Retrieve Compound Sentiment
+    processedData['Compound Sentiment'] = processedData['Sentiment Scores'].apply(lambda x: x['compound'])
+    # Tokenizing and analyzing each review (for Review Summarization)
+    analyzeIndividualReviews(processedData,sia)
+    # Formatting for output
+    processedData['Average Rating'] = processedData['Average Rating'].round(2)
+    processedData['Total Reviews'] = processedData['Review'].apply(lambda x: len(x.split('<SPLIT> ')))
+    
+    return processedData
+
+
+def processDataFromCsv(cleanCsvFilename:str) -> pd.DataFrame:
+    """
+    Reads data from a CSV file, preprocesses it, and groups it based on 
+    'Hotel Name', 'Province', 'Postal', 'Category', 'SubCategory'.
+
+    This function performs data preprocessing and grouping tasks,
+    preparing it for the NLTK Analyzer to analyze all of the reviews for
+    a specific hotel.
+
+    Parameters:
+    cleanCsvFilename (str): The filename of the CSV file containing the cleaned data to be processed.
+
+    Returns:
+    pandas.DataFrame: A DataFrame containing the preprocessed and grouped data based on specified criteria.
     """
     HotelName,HotelProvince,HotelPostal,HotelPrimaryCategory,HotelSubCategory,HotelReviews,ReviewTitle,HotelRating = [], [], [], [], [], [], [],[]
+    GroupFilter = ['Hotel Name', 'Province', 'Postal', 'Category', 'SubCategory']
+    data = {
+    'Hotel Name': HotelName,
+    'Province': HotelProvince,
+    'Postal':HotelPostal,
+    'Category':HotelPrimaryCategory,
+    'SubCategory':HotelSubCategory,
+    'Review': HotelReviews,
+    'Review Summary': ReviewTitle,
+    'Average Rating': HotelRating
+    }
 
-    with open(csvFilename, encoding=ENCODING) as f:
+    with open(cleanCsvFilename, encoding=ENCODING) as f:
         reader = csv.DictReader(f)
         for row in reader:
             HotelName.append(row[HOTELNAME])
@@ -133,39 +177,17 @@ def processDataFromCsv(csvFilename:str):
             ReviewTitle.append(row[REVIEWTITLE])
             HotelRating.append(float(row[HOTELRATING]))
 
-    data = {
-    'Hotel Name': HotelName,
-    'Province': HotelProvince,
-    'Postal':HotelPostal,
-    'Category':HotelPrimaryCategory,
-    'SubCategory':HotelSubCategory,
-    'Review': HotelReviews,
-    'Review Summary': ReviewTitle,
-    'Average Rating': HotelRating
-    }
-    df = pd.DataFrame(data)
-    """
-        Used chatgpt to generate {'Review': lambda x: '<SPLIT> '.join(x), 'Average Rating': 'mean'}
-        Reason: Encountering alot of errors & unsure of the formatting when applying 2 functions 
-        while only resetting index once to dataframe.
-
-        Original statement pre-chatgpt commented.
-
-    """
-
-    groupedData = df.groupby(['Hotel Name', 'Province', 'Postal', 'Category', 'SubCategory']).agg({'Review': lambda x: '<SPLIT> '.join(x), 'Review Summary': lambda y: '<SPLIT> '.join(y),'Average Rating': 'mean'}).reset_index()
-    #groupedData = df.groupby(['Hotel Name', 'Province','Postal','Category','SubCategory'])['Review'].agg(lambda x: '<SPLIT> '.join(x)).reset_index()
-    return groupedData
-
-def outputCsv(data):
-    data.to_csv(OUTPUTFILE)
+    return pd.DataFrame(data).groupby(GroupFilter).agg({'Review': lambda x: '<SPLIT> '.join(x), 'Review Summary': lambda y: '<SPLIT> '.join(y),'Average Rating': 'mean'}).reset_index()
     
 def main():
-    data = processDataFromCsv(FILENAME)
-    nltkAnalyzer(data)
+    data = processDataFromCsv(INPUTFILE)
+    analyzeConcatReviews(data)[OUTPUTHEADER].to_csv(OUTPUTFILE)
     
 try:       
     main()
+    print(f"======= Analyzing Completed =======")
 
 except Exception as e:
-    print("awfnsepgpgspegpwg")
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    print(exc_type, fname, exc_tb.tb_lineno)
