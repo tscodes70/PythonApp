@@ -45,8 +45,28 @@
     </table>
     <script>
         $(document).ready( function () {
-         $('#analysed_data').DataTable();
-        } );
+            $('#analysed_data').DataTable( {
+                columnDefs: [
+                    {
+                        targets:  3,
+                        visible: false
+                    },
+                    {
+                        targets:  4,
+                        visible: false
+                    },
+                    {
+                        targets:  5,
+                        visible: false
+                    },
+                    {
+                        targets:  8,
+                        visible: false
+                    }
+                ]
+            });
+        });
+
     </script>
 </div>
 <br>
