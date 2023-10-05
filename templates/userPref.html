@@ -42,6 +42,9 @@
     <script>
         $(document).ready( function () {
             $('#analysed_data').DataTable( {
+                search: {
+                return: true
+                },
                 columnDefs: [
                     {
                         targets:  3,
