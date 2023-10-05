@@ -6,22 +6,18 @@ import pandas as pd
 app = Flask(__name__)
 Bootstrap(app)
 
-def main():
-    print("hello world!")
-    return
-
 def openCsv():
-    return
+    df = pd.read_csv('outputdata.csv', index_col=0)
+    return df
 
 # test rendering get better formats next time
 @app.route('/', methods=("POST", "GET"))
 def index():
-    df = pd.DataFrame({'A': [0, 1, 2, 3, 4],
-                   'B': [5, 6, 7, 8, 9],
-                   'C': ['a', 'b', 'c--', 'd', 'e']})
-    return render_template("userPref.html", tables=[df.to_html(classes='data')], titles=df.columns.values)
+    df = openCsv()
+    #new_table = df.drop('Unnamed: 0', axis=1)
+    column_val = df.columns.values
+    return render_template("userPref.html", column_names=column_val, row_data=list(df.values.tolist()),
+                           link_column='Hotel Name', zip=zip)
 
 if __name__ == "__main__":    
     app.run(debug=True)
-
-main()
