@@ -4,6 +4,7 @@ import time
 import nltk
 from nltk.corpus import stopwords
 import re
+
 nltk.download('stopwords')
 nltk.download('punkt')
 timestamp = time.strftime("%Y%m%d-%H%M%S")
@@ -54,12 +55,11 @@ emoji_pattern = re.compile("["
                            u"\U000020D0-\U000020FF"  # Combining Diacritical Marks for Symbols
                            u"\U00002100-\U0000214F"  # Letterlike Symbols
                            u"\U00002160-\U0000218F"  # Number Forms
-                           u"\u00C3"
-                           
                            "]+", flags=re.UNICODE)
 
 def dataclean():
-   df = pd.read_csv('test_4oct.csv')
+   # Read the CSV file with 'utf-8-sig' encoding
+   df = pd.read_csv('test_4oct.csv', encoding='utf-8-sig')
    # Get first n rows
    df.head()
    # Print information about the csv
@@ -86,7 +86,7 @@ def dataclean():
    df['Review Tittle'] = df['Review Tittle'].apply(lambda x: emoji_pattern.sub(r'', x))
    df['Review'] = df['Review'].apply(lambda x: emoji_pattern.sub(r'', x))
    # Save to Clean.csv
-   df.to_csv('Clean1.csv', index=False, float_format='%.0f')
+   df.to_csv('Clean1.csv', index=False, float_format='%.0f', encoding='utf-8-sig')
 
 # Scheduled task
 schedule.every(0.1).minutes.do(dataclean)
