@@ -100,12 +100,12 @@ def is_english(sentence):
         return False
 def dataclean():
    # Read the CSV file with 'utf-8-sig' and 'utf-8' encoding
-   df = pd.read_csv('test_4oct.csv', encoding='utf-8-sig' and 'utf-8')
+   df = pd.read_csv('sample.csv', encoding='utf-8-sig' and 'utf-8')
    # Get first n rows
    df.head()
    # Print information about the csv
    df.info()
-   df = df.sort_values(by=['reviews.ratings'], ascending = True)
+   df = df.sort_values(by=['reviews.rating'], ascending = True)
    # Remove missing values
    df = df.dropna()
    # Remove duplicate rows from csv
@@ -127,7 +127,7 @@ def dataclean():
    df['reviews.date'] = 'NA'
    df['reviews.dateAdded'] = 'NA'
    df['reviews.cleantext'] = df['reviews.text']
-   column_order = ['id', 'dateAdded', 'dateUpdated', 'address', 'categories', 'primaryCategories', 'city', 'country', 'keys', 'latitude', 'longitude', 'name', 'postalCode', 'province', 'reviews.date', 'reviews.dateSeen', 'reviews.ratings', 'reviews.sourceURLs', 'reviews.text', 'reviews.title', 'reviews.cleantext', 'reviews.userCity', 'reviews.userProvince', 'reviews.username', 'sourceURLs', 'websites', 'reviews.dateAdded']
+   column_order = ['id', 'dateAdded', 'dateUpdated', 'address', 'categories', 'primaryCategories', 'city', 'country', 'keys', 'latitude', 'longitude', 'name', 'postalCode', 'province', 'reviews.date', 'reviews.dateSeen', 'reviews.rating', 'reviews.sourceURLs', 'reviews.text', 'reviews.title', 'reviews.cleantext', 'reviews.userCity', 'reviews.userProvince', 'reviews.username', 'sourceURLs', 'websites', 'reviews.dateAdded']
    # Rearrange the columns according to the specified order
    df = df[column_order]
    # Replace Hotels to Hotel
@@ -145,7 +145,7 @@ def dataclean():
    # Add space
    df['categories'] = df['categories'].str.replace(',', ', ')
    #Change rating from 2 digits to 1 digit
-   df['reviews.ratings'] = df['reviews.ratings'].apply(lambda x: x // 10)
+   df['reviews.rating'] = df['reviews.rating'].apply(lambda x: x // 10)
    #remove ... after sentence
    df['reviews.cleantext'] = df['reviews.cleantext'].apply(remove_sentence)
    # Remove emoji symbols from the column
