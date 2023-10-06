@@ -179,7 +179,7 @@ def dataclean():
    df['id'] = range(1, len(df) + 1)
    print(df)
    # Save to Clean.csv
-   df.to_csv('Clean2.csv', index=False, encoding='utf-8-sig' and 'utf-8')
+   df.to_csv('Clean3.csv', index=False, encoding='utf-8-sig' and 'utf-8')
 
 # Scheduled task
 schedule.every(0.1).minutes.do(dataclean)
