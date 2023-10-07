@@ -14,7 +14,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from heapq import nlargest
 import globalVar,traceback
 from transformers import T5ForConditionalGeneration, T5Tokenizer
-import time
+import time,ast
+from scipy.stats import pearsonr
+
 
 # Prepare downloadbles
 nltk.download('punkt')
@@ -26,7 +28,6 @@ nlp = spacy.load('en_core_web_sm')
 model = T5ForConditionalGeneration.from_pretrained("t5-small")
 # initialize the model tokenizer
 tokenizer = T5Tokenizer.from_pretrained("t5-small")
-
 
 def getKeywords(hotelReviewList:list) -> list:
     """
@@ -105,12 +106,6 @@ def analyzeIndividualReviews(processedData:pd.DataFrame) -> pd.DataFrame:
 
     processedData[globalVar.POPULAR_KEYWORDS],processedData[globalVar.REVIEWS_SUMMARY] = keywordOfHotelReview,reviewSummaryOfHotel
     return processedData
-    
-
-def analyzeCorrelations(processedData:pd.DataFrame, variable):
-    df = processedData[[variable,globalVar.COMPOUND_SENTIMENT_SCORE]].groupby(variable)[globalVar.COMPOUND_SENTIMENT_SCORE].mean().reset_index()
-    correlation = df[variable].corr(df[globalVar.COMPOUND_SENTIMENT_SCORE])
-    print(correlation)
 
 def groupDataframe(processedData:pd.DataFrame,filter:list) -> pd.DataFrame:
     return processedData.groupby(filter)
@@ -128,7 +123,7 @@ def processDataFromCsv(cleanCsvFilename:str) -> pd.DataFrame:
     Returns:
     pandas.DataFrame: A DataFrame containing the processed data read from the csv.
     """
-    dateAdded, dateUpdated, address, categories, primaryCategories, city, country, keys, latitude, longitude, name, postalCode, province, reviews_date, reviews_dateSeen, reviews_rating, reviews_sourceURLs, reviews_text, reviews_title, reviews_userCity, reviews_userProvince, reviews_username, sourceURLs, websites, reviews_cleantext, reviews_summary, average_rating = ([] for _ in range(27))
+    dateAdded, dateUpdated, address, categories, primaryCategories, city, country, keys, latitude, longitude, name, postalCode, province, reviews_date, reviews_dateSeen, reviews_rating, reviews_sourceURLs, reviews_text, reviews_title, reviews_userCity, reviews_userProvince, reviews_username, sourceURLs, websites, reviews_cleantext, reviews_summary, average_rating, amenities, prices = ([] for _ in range(29))
     data = {
     'dateAdded': dateAdded,
     'dateUpdated': dateUpdated,
@@ -154,6 +149,9 @@ def processDataFromCsv(cleanCsvFilename:str) -> pd.DataFrame:
     'reviews.username': reviews_username,
     'sourceURLs': sourceURLs,
     'websites': websites,
+
+    'amenities' : amenities,
+    'prices': prices,
 
     'reviews.cleantext': reviews_cleantext,
     'reviews.summary': reviews_summary,
@@ -189,6 +187,9 @@ def processDataFromCsv(cleanCsvFilename:str) -> pd.DataFrame:
             sourceURLs.append(row[globalVar.SOURCEURLS])
             websites.append(row[globalVar.WEBSITES])
 
+            amenities.append(ast.literal_eval(row[globalVar.AMENITIES]))
+            prices.append(row[globalVar.PRICES])
+
             reviews_cleantext.append(row[globalVar.REVIEWS_CLEANTEXT])
             reviews_summary.append(row[globalVar.REVIEWS_TEXT])
             average_rating.append(float(row[globalVar.REVIEWS_RATING]))
@@ -213,25 +214,54 @@ def initiateAnalysis(data:pd.DataFrame):
     }).reset_index()
     hProcessedData = analyzeIndividualReviews(hProcessedData)
     hProcessedData[globalVar.AVERAGE_RATING] = hProcessedData[globalVar.AVERAGE_RATING].round(2)
-    hProcessedData[globalVar.REVIEWS_TOTAL] = hProcessedData[globalVar.REVIEWS_TEXT].apply(lambda x: len(x.split('<SPLIT> ')))
+    hProcessedData[globalVar.REVIEWS_TOTAL] = hProcessedData[globalVar.REVIEWS_TEXT].apply(lambda x: int(len(x.split('<SPLIT> '))))
+    hProcessedData[globalVar.REVIEWS_LENGTH] = hProcessedData[globalVar.REVIEWS_TEXT].apply(lambda x: int(len(' '.join(x.split('<SPLIT> ')))))
     hProcessedData[globalVar.ANALYSISOUTPUTHEADER].to_csv(globalVar.ANALYSISOUTPUTBYHOTEL)
 
-    return gProcessedData
+    return gProcessedData,hProcessedData
+
+def averageRatingCorrelation(processedData:pd.DataFrame):
+    df = processedData[[globalVar.AVERAGE_RATING,globalVar.COMPOUND_SENTIMENT_SCORE]].groupby(globalVar.AVERAGE_RATING)[globalVar.COMPOUND_SENTIMENT_SCORE].mean().reset_index()
+    correlation,pvalue = pearsonr(processedData[globalVar.AVERAGE_RATING], processedData[globalVar.COMPOUND_SENTIMENT_SCORE])
+    print(f"==== Correlation of Average Rating ==== \n{correlation}")
+
+def averageReviewLengthCorrelation(processedData:pd.DataFrame):
+    processedData[globalVar.AVERAGE_REVIEWS_LENGTH] = processedData[globalVar.REVIEWS_LENGTH] / processedData[globalVar.REVIEWS_TOTAL]
+    correlation,pvalue = pearsonr(processedData[globalVar.AVERAGE_REVIEWS_LENGTH], processedData[globalVar.COMPOUND_SENTIMENT_SCORE])
+    print(f"==== Correlation of Average Review Length ==== \n{correlation}")
+
+def amenitiesCorrelation(processedData:pd.DataFrame):
+    uAmenties = list(set(amenity for amenity_list in processedData[globalVar.AMENITIES] for amenity in amenity_list))
+    # Initialize a dictionary to store the binary columns for each amenity
+    amenity_columns = {}
+    # Create binary columns for each unique amenity
+    for amenity in uAmenties:
+        processedData[amenity] = processedData[globalVar.AMENITIES].apply(lambda x: 1 if amenity in x else 0)
+        amenity_columns[amenity] = processedData[amenity]
+    correlation = processedData[uAmenties].corrwith(processedData[globalVar.COMPOUND_SENTIMENT_SCORE])
+    print(f'==== Correlation of Amenities ==== \n{correlation}')
+
+def priceCorrelation(processedData:pd.DataFrame):
+    correlation,pvalue = pearsonr(pd.to_numeric(processedData[globalVar.PRICES]), processedData[globalVar.COMPOUND_SENTIMENT_SCORE])
+    print(f'==== Correlation of Price ==== \n{correlation}')
+
 
 def main():
-    gProcessedData = initiateAnalysis(processDataFromCsv(globalVar.ANALYSISINPUTFILE))
-    
+    gProcessedData,hProcessedData = initiateAnalysis(processDataFromCsv(globalVar.ANALYSISINPUTFILE))
     # Correlation analysis
-    analyzeCorrelations(gProcessedData,globalVar.AVERAGE_RATING)
+    averageRatingCorrelation(hProcessedData)
+    averageReviewLengthCorrelation(hProcessedData)
+    amenitiesCorrelation(gProcessedData)
+    priceCorrelation(gProcessedData)
+
     # analyzeCorrelations(gProcessedData,globalVar.PROVINCE)
     # analyzeCorrelations(gProcessedData,globalVar.CATEGORIES) (budget or luxury)
-    # analyzeCorrelations(gProcessedData,'Amenities') (facilities)
     # gProcessedData["ReviewDateFormatted"] = pd.to_datetime(gProcessedData[globalVar.REVIEWS_DATE])
     # analyzeCorrelations(gProcessedData,'ReviewDateFormatted')
-    # analyzeCorrelations(gProcessedData,'ReviewLength')
     # analyzeCorrelations(gProcessedData,'Keywords')
-    # analyzeCorrelations(gProcessedData,'Price')
     #.to_csv("outputdata2.csv")
+
+
     
     
 try:       
