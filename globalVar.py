@@ -25,6 +25,8 @@ REVIEWS_USERNAME = 'reviews.username'
 SOURCEURLS = 'sourceURLs'
 WEBSITES = 'websites'
 
+PRICES = 'prices'
+AMENITIES = 'amenities'
 
 # Crawling Variables
 
@@ -34,6 +36,8 @@ WEBSITES = 'websites'
 REVIEWS_CLEANTEXT = 'reviews.cleantext'
 REVIEWS_SUMMARY = 'reviews.summary'
 REVIEWS_TOTAL = 'reviews.total'
+REVIEWS_LENGTH = 'reviews.length'
+AVERAGE_REVIEWS_LENGTH = 'average.reviews.length'
 AVERAGE_RATING = 'average.rating'
 POPULAR_KEYWORDS = "popular.keywords"
 
@@ -47,7 +51,7 @@ REVIEWSUMMAX = 2
 ANALYSISENCODING = "utf8"
 
 
-ANALYSISINPUTFILE = r"C:\Users\anyho\Desktop\PythonProject\csvs\testing.csv"
+ANALYSISINPUTFILE = r"C:\Users\anyho\Desktop\PythonProject\PythonApp\sampleclean.csv"
 ANALYSISOUTPUTHEADER = [NAME, PROVINCE, POSTALCODE,CATEGORIES,PRIMARYCATEGORIES, COMPOUND_SENTIMENT_SCORE, REVIEWS_SUMMARY, REVIEWS_TOTAL, POPULAR_KEYWORDS,AVERAGE_RATING]
-ANALYSISOUTPUTBYHOTEL = 'Analysis_GHotel.csv'
-ANALYSISOUTPUTBYREVIEWS = 'Analysis_Reviews.csv'
+ANALYSISOUTPUTBYHOTEL = 'Analysis_GHotel_Test.csv'
+ANALYSISOUTPUTBYREVIEWS = 'Analysis_Reviews_Test.csv'
