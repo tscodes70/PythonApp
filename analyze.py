@@ -12,39 +12,25 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from heapq import nlargest
-import sys, os
+import globalVar,traceback
+from transformers import T5ForConditionalGeneration, T5Tokenizer
+import time
 
-
-# Prepare VADER downloadables
+# Prepare downloadbles
 nltk.download('punkt')
 nltk.download('vader_lexicon')
 nltk.download('stopwords')
-
 nlp = spacy.load('en_core_web_sm')
 
-INPUTFILE = "data.csv"
-ENCODING = "utf8"
+# initialize the model architecture and weights
+model = T5ForConditionalGeneration.from_pretrained("t5-small")
+# initialize the model tokenizer
+tokenizer = T5Tokenizer.from_pretrained("t5-small")
 
-OUTPUTFILE = 'outputdata.csv'
-
-#CSV Headers
-HOTELNAME =  "name"
-HOTELPROVINCE = "province"
-HOTELPOSTALCODE = "postalCode"
-HOTELPCATEGORY = "categories"
-HOTELSCATEGORY = "primaryCategories"
-HOTELREVIEWS = "reviews.text"
-REVIEWTITLE = "reviews.title"
-REVIEWDATE = "reviews.date"
-HOTELRATING = "reviews.rating"
-
-RATINGMAX = 5
-SUMMARYLENGTH = 2  # Adjust the length of the summary as needed
-OUTPUTHEADER = ['Hotel Name', 'Province', 'Postal','Category','SubCategory', 'Compound Sentiment', 'Review Summary', 'Total Reviews', 'Popular Keywords','Average Rating']
 
 def getKeywords(hotelReviewList:list) -> list:
     """
-    Retrieves and returns the top keywords of a list of reviews
+    Retrieves and returns the top keywords of all the reviews
     for a single Hotel
 
     Parameters:
@@ -53,188 +39,209 @@ def getKeywords(hotelReviewList:list) -> list:
     Returns:
     A sorted list of keywords based on frequency in descending order
     """
-    testremovestop = []
-    # Remove Stop words
-    for item in hotelReviewList:
-        # Tokenize the text
-        words = nltk.word_tokenize(item)
-
-        # Get a list of English stop words
-        stop_words = set(stopwords.words('english'))
-
-        # Remove stop words from the text
-        filtered_words = [word for word in words if word.lower() not in stop_words]
-
-        # Join the filtered words back into a sentence
-        filtered_text = ' '.join(filtered_words)
-        testremovestop.append(filtered_text)
-
+    hotelSplitList = hotelReviewList.split(' ')
     tfidf_vectorizer = TfidfVectorizer(stop_words='english')
-    df = pd.DataFrame({'Review': testremovestop})
-    tfidf_matrix = tfidf_vectorizer.fit_transform(df['Review'])
+    df = pd.DataFrame({globalVar.REVIEWS_TEXT: hotelSplitList})
+    tfidf_matrix = tfidf_vectorizer.fit_transform(df[globalVar.REVIEWS_TEXT])
     tfidf_df = pd.DataFrame(tfidf_matrix.toarray(), columns=tfidf_vectorizer.get_feature_names_out())
-    return sorted(list(zip(tfidf_df.columns.tolist(),tfidf_df.sum().tolist())),key=lambda x:x[1],reverse=True)[:5]
+    return sorted(list(zip(tfidf_df.columns.tolist(),tfidf_df.sum().tolist())),key=lambda x:x[1],reverse=True)[:globalVar.KEYWORDMAX]
 
-def getSummary(reviews):
-    # Tokenize the text into sentences
-    doc = nlp(reviews)
-    sentences = [sent.text for sent in doc.sents]
+def getSummary(topConcatReview:str) -> str:
+    """
+    Generates a summary based on the concatenated string of the
+    top 4 reviews of a single Hotel using the Transformer library
 
-    # Calculate the importance score of each sentence based on length
-    sentence_scores = {sentence: len(sentence) for sentence in sentences}
+    Parameters:
+    topConcatReview (str): A str of top reviews for a single Hotel
 
-    # Select the top N sentences with the highest importance scores
-    top_sentences = nlargest(SUMMARYLENGTH, sentence_scores, key=sentence_scores.get)
+    Returns:
+    A generated summary of the top reviews of a hotel
+    """
+    # encode the text into tensor of integers using the appropriate tokenizer
+    inputs = tokenizer.encode("summarize: " + topConcatReview, return_tensors="pt", max_length=512, truncation=True)    # generate the summarization output
+    outputs = model.generate(
+        inputs, 
+        max_length=150, 
+        min_length=15, 
+        length_penalty=2.0, 
+        num_beams=4, 
+        early_stopping=True)
 
-    # Create the summary by joining selected sentences
-    summary = ' '.join(top_sentences)
+    return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-    return summary
-
-def analyzeIndividualReviews(processedData:pd.DataFrame):
+def analyzeIndividualReviews(processedData:pd.DataFrame) -> pd.DataFrame:
     """
     Analyzes individual reviews using VADER Sentiment Analysis then
-    1. Summarizes top 2 hotel reviews.
-    2. Retrieves top 5 Keywords of hotel reviews
+    1. Summarizes top 4 hotel reviews.
+    2. Retrieves top 10 Keywords of hotel reviews
 
-    This function performs a analysis of individual hotel reviews by summarizing top 4 hotel reviews
-    and calling the 'getKeywords' function to extract top 5 keywords of reviews. Finally, both
-    of these data are added into the intial Dataframe
+    This function performs a analysis of individual hotel reviews by 
+    calling the 'getSummary' function to summarize the top 4 hotel reviews and 
+    calling the 'getKeywords' function to extract top 10 keywords of reviews. 
+    Finally, both of these data are added into the intial Dataframe
 
     Parameters:
     processedData (pd.DataFrame): A Pandas Dataframe of individual hotel reviews to be analyzed.
-    sia (SentimentIntensityAnalyzer): A initialized SentimentIntensityAnalyzer
 
     Returns:
-    None
+    processedData (pd.DataFrame): A Pandas Dataframe appended with data of Review Summary & Popular Keywords
     """
     reviewSummaryOfHotel,keywordOfHotelReview = [],[]
     sia = SentimentIntensityAnalyzer()
-
-
-    for reviewsGroupedByHotel in processedData['Review Summary']:
-        sentimentScores = []
-
+    for index, reviewsGroupedByHotel in enumerate(processedData[globalVar.REVIEWS_SUMMARY]):
         reviewListEachHotel = reviewsGroupedByHotel.split('<SPLIT>')
-        for review in reviewListEachHotel:
-            sentimentScores.append(sia.polarity_scores(review))
-
         # Sorting Reviews from best to worst
-        rankedReviews = sorted(enumerate(sentimentScores), key=lambda x: x[1]['compound'], reverse=True)
+        rankedReviews = sorted(reviewListEachHotel, key=lambda x: sia.polarity_scores(x)['compound'], reverse=True)
         # Retrieve top 4 reviews sorted by sentiment score
-        top_sentences = nlargest(SUMMARYLENGTH, rankedReviews, key=lambda x: x[1]['compound'])
+        top_sentences = nlargest(globalVar.REVIEWSUMMAX, rankedReviews, key=lambda x: sia.polarity_scores(x)['compound'])
 
-        sortedReviewList = [reviewListEachHotel[index] for index, _ in sorted(top_sentences)]
+        # Summarize the sorted reviews using transformer
+        reviewSummaryOfHotel.append(getSummary(" ".join(top_sentences)))
 
-        # Summarize the sorted reviews using spaCy
-        summary = getSummary(" ".join(sortedReviewList))
-        reviewSummaryOfHotel.append(summary)
+        print(f"Processed {index + 1} hotels out of {len(processedData[globalVar.REVIEWS_SUMMARY])}")
 
-    # Retrieving top keywords associated with top reviews (change to cleanedtext)
-    for reviewsGroupedByHotel in processedData['Review Summary']:
-        reviewListEachHotel = reviewsGroupedByHotel.split('<SPLIT>')
-        keywordOfHotelReview.append(getKeywords(reviewListEachHotel)) 
-
-    processedData["Popular Keywords"],processedData['Review Summary'] = keywordOfHotelReview,reviewSummaryOfHotel
     
-def analyzeConcatReviews(processedData:pd.DataFrame) -> pd.DataFrame:
-    """
-    Analyzes a list of text reviews using VADER Sentiment Analysis.
+    keywordOfHotelReview = [getKeywords(item) for item in processedData[globalVar.REVIEWS_CLEANTEXT]]
 
-    This function takes in a list of text reviews and analyzes them
-    using the VADER Sentiment Analysis tool, which is implemented
-    using the Natural Language Toolkit (NLTK). 
+    processedData[globalVar.POPULAR_KEYWORDS],processedData[globalVar.REVIEWS_SUMMARY] = keywordOfHotelReview,reviewSummaryOfHotel
+    return processedData
     
-    It calculates the compound sentiment scores the reviews of each 
-    hotel, formats them and returns a Pandas Dataframe containing 
-    ['Hotel Name', 'Province', 'Postal','Category','SubCategory', 'Compound Sentiment', 
-    'Review Summary', 'Total Reviews', 'Popular Keywords','Average Rating']
 
-    Parameters:
-    reviews (list of str): A list of text reviews to be analyzed.
-
-    Returns:
-    processedData (pd.Dataframe): A Pandas Dataframe after analyzing
-    """
-    gProcessedData = processedData.agg({'Review': lambda x: '<SPLIT> '.join(x), 'Review Summary': lambda y: '<SPLIT> '.join(y),'Average Rating': 'mean'}).reset_index()
-    
-    sia = SentimentIntensityAnalyzer()
-    # Tokenizing and analyzing reviews
-    gProcessedData['Sentiment Scores'] = gProcessedData['Review'].apply(lambda x: sia.polarity_scores(x))
-    # Retrieve Compound Sentiment
-    gProcessedData['Compound Sentiment'] = gProcessedData['Sentiment Scores'].apply(lambda x: x['compound'])
-
-    return gProcessedData
-
-
-def analyzeCorrelations(processedData:pd.DataFrame, filter):
-    return processedData[[filter,'Compound Sentiment']].groupby(filter)['Compound Sentiment'].mean().reset_index()
-
+def analyzeCorrelations(processedData:pd.DataFrame, variable):
+    df = processedData[[variable,globalVar.COMPOUND_SENTIMENT_SCORE]].groupby(variable)[globalVar.COMPOUND_SENTIMENT_SCORE].mean().reset_index()
+    correlation = df[variable].corr(df[globalVar.COMPOUND_SENTIMENT_SCORE])
+    print(correlation)
 
 def groupDataframe(processedData:pd.DataFrame,filter:list) -> pd.DataFrame:
     return processedData.groupby(filter)
 
 def processDataFromCsv(cleanCsvFilename:str) -> pd.DataFrame:
     """
-    Reads data from a CSV file, preprocesses it, and groups it based on 
-    'Hotel Name', 'Province', 'Postal', 'Category', 'SubCategory'.
+    Reads data from a CSV file, processes it and puts it into a Pandas Dataframe.
 
-    This function performs data preprocessing and grouping tasks,
-    preparing it for the NLTK Analyzer to analyze all of the reviews for
-    a specific hotel.
+    This function performs data preprocessing to prepare it 
+    for the NLTK Analyzer.
 
     Parameters:
     cleanCsvFilename (str): The filename of the CSV file containing the cleaned data to be processed.
 
     Returns:
-    pandas.DataFrame: A DataFrame containing the preprocessed and grouped data based on specified criteria.
+    pandas.DataFrame: A DataFrame containing the processed data read from the csv.
     """
-    HotelName,HotelProvince,HotelPostal,HotelPrimaryCategory,HotelSubCategory,HotelReviews,HotelReviewDate,ReviewTitle,HotelRating = [], [], [], [], [], [], [], [],[]
+    dateAdded, dateUpdated, address, categories, primaryCategories, city, country, keys, latitude, longitude, name, postalCode, province, reviews_date, reviews_dateSeen, reviews_rating, reviews_sourceURLs, reviews_text, reviews_title, reviews_userCity, reviews_userProvince, reviews_username, sourceURLs, websites, reviews_cleantext, reviews_summary, average_rating = ([] for _ in range(27))
     data = {
-    'Hotel Name': HotelName,
-    'Province': HotelProvince,
-    'Postal':HotelPostal,
-    'Category':HotelPrimaryCategory,
-    'SubCategory':HotelSubCategory,
-    'Review': HotelReviews,
-    'ReviewDate': HotelReviewDate,
-    'Review Summary': HotelReviews,
-    'Average Rating': HotelRating
+    'dateAdded': dateAdded,
+    'dateUpdated': dateUpdated,
+    'address': address,
+    'categories': categories,
+    'primaryCategories': primaryCategories,
+    'city': city,
+    'country': country,
+    'keys': keys,
+    'latitude': latitude,
+    'longitude': longitude,
+    'name': name,
+    'postalCode': postalCode,
+    'province': province,
+    'reviews.date': reviews_date,
+    'reviews.dateSeen': reviews_dateSeen,
+    'reviews.rating': reviews_rating,
+    'reviews.sourceURLs': reviews_sourceURLs,
+    'reviews.text': reviews_text,
+    'reviews.title': reviews_title,
+    'reviews.userCity': reviews_userCity,
+    'reviews.userProvince': reviews_userProvince,
+    'reviews.username': reviews_username,
+    'sourceURLs': sourceURLs,
+    'websites': websites,
+
+    'reviews.cleantext': reviews_cleantext,
+    'reviews.summary': reviews_summary,
+    'average.rating': average_rating
     }
 
-    with open(cleanCsvFilename, encoding=ENCODING) as f:
+
+    with open(cleanCsvFilename, encoding=globalVar.ANALYSISENCODING) as f:
         reader = csv.DictReader(f)
         for row in reader:
-            HotelName.append(row[HOTELNAME])
-            HotelProvince.append(row[HOTELPROVINCE])
-            HotelPostal.append(row[HOTELPOSTALCODE])
-            HotelPrimaryCategory.append(row[HOTELPCATEGORY])
-            HotelSubCategory.append(row[HOTELSCATEGORY])
-            HotelReviews.append(row[HOTELREVIEWS])
-            HotelReviewDate.append(row[REVIEWDATE])
-            ReviewTitle.append(row[REVIEWTITLE])
-            HotelRating.append(float(row[HOTELRATING]))
+            dateAdded.append(row[globalVar.DATEADDED])
+            dateUpdated.append(row[globalVar.DATEUPDATED])
+            address.append(row[globalVar.ADDRESS])
+            categories.append(row[globalVar.CATEGORIES])
+            primaryCategories.append(row[globalVar.PRIMARYCATEGORIES])
+            city.append(row[globalVar.CITY])
+            country.append(row[globalVar.COUNTRY])
+            keys.append(row[globalVar.KEYS])
+            latitude.append(row[globalVar.LATITUDE])
+            longitude.append(row[globalVar.LONGITUDE])
+            name.append(row[globalVar.NAME])
+            postalCode.append(row[globalVar.POSTALCODE])
+            province.append(row[globalVar.PROVINCE])
+            reviews_date.append(row[globalVar.REVIEWS_DATE])
+            reviews_dateSeen.append(row[globalVar.REVIEWS_DATESEEN])
+            reviews_rating.append(float(row[globalVar.REVIEWS_RATING]))
+            reviews_sourceURLs.append(row[globalVar.REVIEWS_SOURCEURLS])
+            reviews_text.append(row[globalVar.REVIEWS_TEXT])
+            reviews_title.append(row[globalVar.REVIEWS_TITLE])
+            reviews_userCity.append(row[globalVar.REVIEWS_USERCITY])
+            reviews_userProvince.append(row[globalVar.REVIEWS_USERPROVINCE])
+            reviews_username.append(row[globalVar.REVIEWS_USERNAME])
+            sourceURLs.append(row[globalVar.SOURCEURLS])
+            websites.append(row[globalVar.WEBSITES])
 
+            reviews_cleantext.append(row[globalVar.REVIEWS_CLEANTEXT])
+            reviews_summary.append(row[globalVar.REVIEWS_TEXT])
+            average_rating.append(float(row[globalVar.REVIEWS_RATING]))
     return pd.DataFrame(data)
+
+def initiateAnalysis(data:pd.DataFrame):
+    # Prepare Base Analysis
+    sia = SentimentIntensityAnalyzer()
+    data[globalVar.SENTIMENT_SCORE] = data[globalVar.REVIEWS_TEXT].apply(lambda x: sia.polarity_scores(x))
+    data[globalVar.COMPOUND_SENTIMENT_SCORE] = data[globalVar.SENTIMENT_SCORE].apply(lambda x: x['compound'])
+    gProcessedData = data.copy()
+    # Export individual review analysis
+    gProcessedData[[globalVar.NAME, globalVar.PROVINCE, globalVar.COUNTRY, globalVar.REVIEWS_DATE, globalVar.REVIEWS_TEXT, globalVar.COMPOUND_SENTIMENT_SCORE]].to_csv(globalVar.ANALYSISOUTPUTBYREVIEWS)
     
+    # Export average compound analysis grouped by hotel
+    hProcessedData = groupDataframe(gProcessedData.copy(),[globalVar.NAME, globalVar.PROVINCE, globalVar.POSTALCODE, globalVar.CATEGORIES, globalVar.PRIMARYCATEGORIES]).agg({
+    globalVar.REVIEWS_TEXT: lambda x: '<SPLIT> '.join(x),
+    globalVar.REVIEWS_SUMMARY: lambda y: '<SPLIT> '.join(y),
+    globalVar.REVIEWS_CLEANTEXT: lambda z: ' '.join(z),
+    globalVar.AVERAGE_RATING: 'mean',
+    globalVar.COMPOUND_SENTIMENT_SCORE: 'mean'
+    }).reset_index()
+    hProcessedData = analyzeIndividualReviews(hProcessedData)
+    hProcessedData[globalVar.AVERAGE_RATING] = hProcessedData[globalVar.AVERAGE_RATING].round(2)
+    hProcessedData[globalVar.REVIEWS_TOTAL] = hProcessedData[globalVar.REVIEWS_TEXT].apply(lambda x: len(x.split('<SPLIT> ')))
+    hProcessedData[globalVar.ANALYSISOUTPUTHEADER].to_csv(globalVar.ANALYSISOUTPUTBYHOTEL)
+
+    return gProcessedData
+
 def main():
-    data = processDataFromCsv(INPUTFILE)
-    gProcessedData = analyzeConcatReviews(groupDataframe(data,['Hotel Name', 'Province', 'Postal', 'Category', 'SubCategory']))
-    analyzeCorrelations(gProcessedData,'Province').to_csv("outputdata2.csv")
-
-    # Tokenizing and analyzing each review (for Review Summarization)
-    analyzeIndividualReviews(gProcessedData)
-
-    # Formatting for output
-    gProcessedData['Average Rating'] = gProcessedData['Average Rating'].round(2)
-    gProcessedData['Total Reviews'] = gProcessedData['Review'].apply(lambda x: len(x.split('<SPLIT> ')))
-    gProcessedData[OUTPUTHEADER].to_csv(OUTPUTFILE)
+    gProcessedData = initiateAnalysis(processDataFromCsv(globalVar.ANALYSISINPUTFILE))
+    
+    # Correlation analysis
+    analyzeCorrelations(gProcessedData,globalVar.AVERAGE_RATING)
+    # analyzeCorrelations(gProcessedData,globalVar.PROVINCE)
+    # analyzeCorrelations(gProcessedData,globalVar.CATEGORIES) (budget or luxury)
+    # analyzeCorrelations(gProcessedData,'Amenities') (facilities)
+    # gProcessedData["ReviewDateFormatted"] = pd.to_datetime(gProcessedData[globalVar.REVIEWS_DATE])
+    # analyzeCorrelations(gProcessedData,'ReviewDateFormatted')
+    # analyzeCorrelations(gProcessedData,'ReviewLength')
+    # analyzeCorrelations(gProcessedData,'Keywords')
+    # analyzeCorrelations(gProcessedData,'Price')
+    #.to_csv("outputdata2.csv")
+    
+    
 try:       
+    sTime = time.time() 
     main()
-    print(f"======= Analyzing Completed =======")
+    eTime = time.time()
+    runtime = eTime - sTime
+    print(f"======= Analyze Information =======")
+    print(f"Runtime: {runtime} seconds")
+    print(f"===================================")
 
-except Exception as e:
-    # exc_type, exc_obj, exc_tb = sys.exc_info()
-    # fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    # print(exc_type, fname, exc_tb.tb_lineno)
-    print(e)
+except:
+    traceback.print_exc() 
