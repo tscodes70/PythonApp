@@ -15,6 +15,15 @@ from selenium.common.exceptions import ElementNotInteractableException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+def header_exists(file_path):
+    try:
+        with open(file_path, 'r', newline='') as csvfile:
+            csvreader = csv.reader(csvfile)
+            header = next(csvreader)
+            return header == ["address", "categories", "city",  "country", "hotelName", "postalCode", "province", "reviews.date", "reviews.rating", "reviews.title", "reviews.text", "reviews.sourceURLs", "sourceURL", "amenities", "prices"]
+    except FileNotFoundError:
+        return False
+
 def get_reviews_data(driver, csvWriter):
     container = driver.find_elements(By.XPATH, "//div[@data-reviewid]")
     dates = driver.find_elements(By.XPATH, ".//div[@class='cRVSd']")
@@ -73,25 +82,24 @@ def get_reviews_data(driver, csvWriter):
 
 def main():
     path_to_file = r"C:\Users\Nisa\OneDrive - Temasek Polytechnic\Documents\Singapore Institute of Technology\Y1 TRIMESTER 1\INF1002 Programming fundamental\Project\test_5oct1.csv"
-    urls = input("Enter a list of Tripadvisor review URLs separated by commas: ").split(",")
-    
+    urls = input("Enter TripAdvisor review URLs (comma-separated): ").split(',')
     # Define the custom user-agent
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
     # Configure Chrome WebDriver with custom user-agent
     options = webdriver.ChromeOptions()
     options.add_argument(f"user-agent={user_agent}")
-    
-    csvFile = open(path_to_file, 'a', encoding="utf-8")
-    csvWriter = csv.writer(csvFile)
-    
-    # Write header only once
-    if not csvFile.tell():
+    driver = webdriver.Chrome()
+    csvFile = open(path_to_file, 'a', encoding="utf-8", newline='')
+
+    # Check if header exists and write it if not
+    if not header_exists(path_to_file):
+        csvWriter = csv.writer(csvFile)
         csvWriter.writerow(["address", "categories", "city",  "country", "hotelName", "postalCode", "province", "reviews.date", "reviews.rating", "reviews.title", "reviews.text", "reviews.sourceURLs", "sourceURL", "amenities", "prices"])
-    
+
     for url in urls:
-        driver = webdriver.Chrome(options=options)
-        driver.get(url.strip())
-    
+        driver.get(url)
+        csvWriter = csv.writer(csvFile)
+        
         while True:
             time.sleep(6)
             try:
@@ -102,7 +110,7 @@ def main():
                 get_reviews_data(driver, csvWriter)
             except (ElementNotInteractableException, NoSuchElementException, TimeoutException):
                 break
-    
+
             try:
                 next_button = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.XPATH, './/a[@class="ui_button nav next primary "]'))
@@ -110,9 +118,8 @@ def main():
                 next_button.click()
             except (NoSuchElementException, TimeoutException):
                 break
-    
-        driver.quit()
-    
+
+    driver.quit()
     csvFile.close()
 
 if __name__ == "__main__":
