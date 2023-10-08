@@ -303,11 +303,11 @@ def main():
         combined_data = pd.concat([existing_data, cleanedDataFrame], ignore_index=True)
         # Save the combined data to the dataclean.csv file
         combined_data.to_csv('dataclean.csv', index=False)
-        print("Data appended to output.csv")
+        print("Data appended to dataclean.csv")
     except FileNotFoundError:
         # If the file doesn't exist, save the cleaned data directly
         cleanedDataFrame.to_csv('dataclean.csv', index=False)
-        print("Data saved to output.csv")
+        print("Data saved to dataclean.csv")
 
 
 
