@@ -43,23 +43,28 @@
                     <div>{{ histogram_div|safe }}</div>
                     <!--<h3>Word Cloud on the Review Summary</h3>
                     <img src="data:image/png;base64,{{ img_data }}" alt="Word Cloud">-->
-                    <label for="province-dropdown">Select a Province:</label>
-                    <select id="province-dropdown">
-                        <option value="">All</option>
-                        <!-- Dropdown options will be populated dynamically using JavaScript -->
-                    </select>
-
+                    <label for="hotelName-dropdown">Select a Province:</label>
+                    <form method="POST" action="{{ url_for('wordcloud') }}">
+                        <select id="hotelName-dropdown" name="hotelName-dropdown">
+                            <option value="">All</option>
+                            <!-- Dropdown options will be populated dynamically using JavaScript -->
+                            {% for hotelName in hotelNames %}
+                                <option value="{{ hotelName }}">{{ hotelName }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="submit" value="Generate Word Cloud">
+                    </form>
                     <div id="filtered-data">
                         <!-- Filtered data will be displayed here -->
                     </div>
                     <div id="wordcloud-container">
                         <!-- Word cloud will be displayed here -->
+                        <h3>Word Cloud on the reviews for {{hotelName}}</h3>
+                        <img src="data:image/png;base64,{{ img_data }}" alt="Word Cloud">
                     </div>
 
-                    <button id="generate-wordcloud">Generate Word Cloud</button>
-
                     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-                    <script src="{{ url_for('static', filename='filter.js') }}"></script>
+                    <!--<script src="{{ url_for('static', filename='filter.js') }}"></script>-->
                 </div>
                 <div class="tab-pane fade" id="pills-profile" role="tabpanel">...
 

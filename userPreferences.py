@@ -34,27 +34,19 @@ Bootstrap(app)
 UPLOAD_FOLDER = os.path.join('dataset')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-def openCsv():
-    # takes data from outputdata.csv and loads it into a pandas dataframe
-    df = pd.read_csv('outputdata.csv', index_col=0)
-    return df
+
+# takes data from outputdata.csv and loads it into a pandas dataframe
+df = pd.read_csv('NEWOUTPUT.csv', index_col=0)
 
 # Route to get unique provinces for the dropdown
 @app.route('/get_provinces')
 def get_provinces():
-    # Load the CSV data into a Pandas DataFrame
-    df = pd.read_csv('outputdata.csv')
-    
     provinces = df['Province'].unique()
-    print(provinces)
-    return json.dumps(provinces.tolist())
+    return render_template('userDashboard.html', provinces=provinces)
 
 # Route to filter data based on the selected province
 @app.route('/filter_data')
-def filter_data():
-    # Load the CSV data into a Pandas DataFrame
-    df = pd.read_csv('outputdata.csv')
-    
+def filter_data(): 
     selected_province = request.args.get('province')
 
     if selected_province:
@@ -65,23 +57,31 @@ def filter_data():
     filtered_data_html = filtered_data.to_html()
     return filtered_data_html
 
-@app.route('/')
-def navigation():
-    # Load the CSV data into a Pandas DataFrame
-    df = pd.read_csv('outputdata.csv')
-
+def piechart():
     # Assuming the CSV has a 'Category' column, get the top 4 values
     top_categories = df['Category'].value_counts().nlargest(4)
     # Create the Plotly pie chart
     pie_chart = go.Figure(data=[go.Pie(labels=top_categories.index, values=top_categories)])
     # Convert the chart to an HTML div
     pie_chart_div = pie_chart.to_html(full_html=False)
+
+    return pie_chart_div
     
+def histogram():
     # histogram
     ratingColumn = 'Average Rating'
     histogram = px.histogram(df, x=ratingColumn, title=f'Histogram of Average Rating')
     histogram_div = histogram.to_html()
     
+    return histogram_div
+
+@app.route('/', methods=['GET', 'POST'])
+def navigation():
+    pie_chart_div = piechart()
+    histogram_div = histogram()
+
+    hotel_name = df['Hotel Name'].unique()
+
     selected_province = request.args.get('province')
 
     if selected_province:
@@ -105,9 +105,32 @@ def navigation():
     plt.savefig(img_buffer, format='png')
     img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
     
-    return render_template('userDashboard.html', pie_chart_div=pie_chart_div, histogram_div=histogram_div, img_data=img_data)
+    return render_template('userDashboard.html', hotelNames=hotel_name, pie_chart_div=pie_chart_div, histogram_div=histogram_div, img_data=img_data)
     #return render_template('dashboard2.html', pie_chart_div=pie_chart_div, histogram_div=histogram_div)
 
+@app.route('/wordcloud', methods=['POST'])
+def wordcloud():
+    selected_hotel = request.form['hotelName-dropdown']
+
+    if selected_hotel:
+        filtered_data = df[df['Hotel Name'] == selected_hotel]
+        text = ' '.join(filtered_data['Review Summary'].astype(str))
+    else:
+        text = ' '.join(df['Review Summary'].astype(str))
+    
+    # Generate the word cloud
+    wordcloud = WordCloud(width=800, height=400)
+    wordcloud.generate(text)
+
+    # Render the word cloud as a base64-encoded image
+    img_buffer = BytesIO()
+    plt.figure(figsize=(8, 4))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    plt.savefig(img_buffer, format='png')
+    img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+
+    return render_template('userDashboard.html', img_data=img_data, hotelName=selected_hotel)
 
 # import csv
 @app.route('/upload_file', methods=['GET', 'POST'])
@@ -130,7 +153,6 @@ def uploadFile():
 
 @app.route('/table', methods=("POST", "GET"))
 def index():
-    df = openCsv()
     column_val = df.columns.values
     return render_template("userPref.html", column_names=column_val, row_data=list(df.values.tolist()),zip=zip)
 
