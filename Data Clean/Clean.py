@@ -129,10 +129,13 @@ def clean_amenities(amenities):
     if amenities is not None and isinstance(amenities, str):
         # Split the amenities by commas and remove empty entries
         cleaned_amenities = [amenity.strip() for amenity in amenities.split(',') if amenity.strip()]
+        # If there are no cleaned amenities, set it to an empty list
+        if not cleaned_amenities:
+            return '[]'
         # Join the cleaned amenities back into a single string
         return ', '.join(cleaned_amenities)
     else:
-        return amenities  # Return the original value if it's not a valid string
+        return '[]'  # Return an empty list if it's not a valid string
 
 # Define a function to calculate the average of three values in a row and replace the 'prices' column
 def calculate_average_and_replace(row):
@@ -290,8 +293,22 @@ def readScrapeCsv(filename: str) -> pd.DataFrame:
 
 
 def main():
-    dataFrame = readScrapeCsv(r'combinedData.csv')
-    dataCleaning(dataFrame).to_csv(r"testing.csv")
+    dataFrame = readScrapeCsv('extracted7oct1.csv')
+    cleanedDataFrame = dataCleaning(dataFrame)
+
+    # Check if the dataclean.csv file exists
+    try:
+        existing_data = pd.read_csv('dataclean.csv')
+        # Append the cleaned data to the existing data
+        combined_data = pd.concat([existing_data, cleanedDataFrame], ignore_index=True)
+        # Save the combined data to the dataclean.csv file
+        combined_data.to_csv('dataclean.csv', index=False)
+        print("Data appended to dataclean.csv")
+    except FileNotFoundError:
+        # If the file doesn't exist, save the cleaned data directly
+        cleanedDataFrame.to_csv('dataclean.csv', index=False)
+        print("Data saved to dataclean.csv")
+
 
 
 main()
