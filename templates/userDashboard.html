@@ -39,11 +39,23 @@
                     <h3>Catergories of the accomodations</h3>
                     <div>{{ pie_chart_div|safe }}</div>
                     <h2>Histogram</h2>
-                    <h3>Average Rating of the accomodations</h3>
+                    <h3>Average Rating of the {{ hotelName }}</h3>
+                    <label for="hotelName-dropdown-histogram">Select a Hotel:</label>
+                    <form method="POST" action="{{ url_for('histogram') }}">
+                        <select id="hotelName-dropdown-histogram" name="hotelName-dropdown-histogram">
+                            <option value="">All</option>
+                            <!-- Dropdown options will be populated dynamically using JavaScript -->
+                            {% for hotelName in hotelNames %}
+                                <option value="{{ hotelName }}">{{ hotelName }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="submit" value="Generate Word Cloud">
+                    </form>
                     <div>{{ histogram_div|safe }}</div>
                     <!--<h3>Word Cloud on the Review Summary</h3>
                     <img src="data:image/png;base64,{{ img_data }}" alt="Word Cloud">-->
-                    <label for="hotelName-dropdown">Select a Province:</label>
+                    <h3>{{ wordcloud_heading }}</h3>
+                    <label for="hotelName-dropdown">Select a Hotel:</label>
                     <form method="POST" action="{{ url_for('wordcloud') }}">
                         <select id="hotelName-dropdown" name="hotelName-dropdown">
                             <option value="">All</option>
@@ -59,7 +71,6 @@
                     </div>
                     <div id="wordcloud-container">
                         <!-- Word cloud will be displayed here -->
-                        <h3>Word Cloud on the reviews for {{hotelName}}</h3>
                         <img src="data:image/png;base64,{{ img_data }}" alt="Word Cloud">
                     </div>
 

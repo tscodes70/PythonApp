@@ -57,6 +57,7 @@ def filter_data():
     filtered_data_html = filtered_data.to_html()
     return filtered_data_html
 
+@app.route('/piechart', methods=['POST'])
 def piechart():
     # Assuming the CSV has a 'Category' column, get the top 4 values
     top_categories = df['Category'].value_counts().nlargest(4)
@@ -66,19 +67,63 @@ def piechart():
     pie_chart_div = pie_chart.to_html(full_html=False)
 
     return pie_chart_div
-    
+
+@app.route('/histogram', methods=['POST'])
 def histogram():
-    # histogram
-    ratingColumn = 'Average Rating'
-    histogram = px.histogram(df, x=ratingColumn, title=f'Histogram of Average Rating')
+    #wordcloud = wordcloud()
+    selected_hotel = request.form['hotelName-dropdown-histogram']
+    
+    if selected_hotel:
+        filtered_data = df[df['Hotel Name'] == selected_hotel]
+        data = filtered_data['Average Rating'].astype(float)
+    else:
+        data = df['Average Rating'].astype(float)
+
+    # Create a histogram figure using go.Figure
+    histogram = go.Figure(data=[go.Histogram(x=data)])
+    histogram.update_layout(
+        title=f'Histogram of Average Rating',
+        xaxis_title='Average Rating',
+        yaxis_title='Count'
+    )
     histogram_div = histogram.to_html()
     
-    return histogram_div
+    return render_template('userDashboard.html', histogram_div=histogram_div, hotelName=selected_hotel)
+
+@app.route('/wordcloud', methods=['POST'])
+def wordcloud():
+    pie_chart_div = piechart()
+    #histogram_div = histogram()
+
+    selected_hotel = request.form['hotelName-dropdown']
+    hotel_name = df['Hotel Name'].unique()
+    heading = "Word Cloud on the reviews for " + selected_hotel
+
+    if selected_hotel:
+        filtered_data = df[df['Hotel Name'] == selected_hotel]
+        text = ' '.join(filtered_data['Review Summary'].astype(str))
+    else:
+        text = ' '.join(df['Review Summary'].astype(str))
+    
+    # Generate the word cloud
+    wordcloud = WordCloud(width=800, height=400)
+    wordcloud.generate(text)
+
+    # Render the word cloud as a base64-encoded image
+    img_buffer = BytesIO()
+    plt.figure(figsize=(8, 4))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    plt.savefig(img_buffer, format='png')
+    img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+
+    return render_template('userDashboard.html', hotelNames= hotel_name, wordcloud_heading=heading, img_data=img_data, hotelName=selected_hotel, pie_chart_div=pie_chart_div)
 
 @app.route('/', methods=['GET', 'POST'])
 def navigation():
     pie_chart_div = piechart()
-    histogram_div = histogram()
+    
+    wordcloud_heading = "Word Cloud"
 
     hotel_name = df['Hotel Name'].unique()
 
@@ -105,32 +150,8 @@ def navigation():
     plt.savefig(img_buffer, format='png')
     img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
     
-    return render_template('userDashboard.html', hotelNames=hotel_name, pie_chart_div=pie_chart_div, histogram_div=histogram_div, img_data=img_data)
+    return render_template('userDashboard.html', wordcloud_heading = wordcloud_heading, hotelNames=hotel_name, pie_chart_div=pie_chart_div, img_data=img_data)
     #return render_template('dashboard2.html', pie_chart_div=pie_chart_div, histogram_div=histogram_div)
-
-@app.route('/wordcloud', methods=['POST'])
-def wordcloud():
-    selected_hotel = request.form['hotelName-dropdown']
-
-    if selected_hotel:
-        filtered_data = df[df['Hotel Name'] == selected_hotel]
-        text = ' '.join(filtered_data['Review Summary'].astype(str))
-    else:
-        text = ' '.join(df['Review Summary'].astype(str))
-    
-    # Generate the word cloud
-    wordcloud = WordCloud(width=800, height=400)
-    wordcloud.generate(text)
-
-    # Render the word cloud as a base64-encoded image
-    img_buffer = BytesIO()
-    plt.figure(figsize=(8, 4))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    plt.savefig(img_buffer, format='png')
-    img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
-
-    return render_template('userDashboard.html', img_data=img_data, hotelName=selected_hotel)
 
 # import csv
 @app.route('/upload_file', methods=['GET', 'POST'])
