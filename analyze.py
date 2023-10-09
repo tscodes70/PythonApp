@@ -16,6 +16,7 @@ import globalVar,traceback
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 import time,ast
 from scipy.stats import pearsonr
+import numpy as np
 
 
 # Prepare downloadbles
@@ -157,8 +158,6 @@ def processDataFromCsv(cleanCsvFilename:str) -> pd.DataFrame:
     'reviews.summary': reviews_summary,
     'average.rating': average_rating
     }
-
-
     with open(cleanCsvFilename, encoding=globalVar.ANALYSISENCODING) as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -202,7 +201,7 @@ def initiateAnalysis(data:pd.DataFrame):
     data[globalVar.COMPOUND_SENTIMENT_SCORE] = data[globalVar.SENTIMENT_SCORE].apply(lambda x: x['compound'])
     gProcessedData = data.copy()
     # Export individual review analysis
-    gProcessedData[[globalVar.NAME, globalVar.PROVINCE, globalVar.COUNTRY, globalVar.REVIEWS_DATE, globalVar.REVIEWS_TEXT, globalVar.COMPOUND_SENTIMENT_SCORE]].to_csv(globalVar.ANALYSISOUTPUTBYREVIEWS)
+    gProcessedData[[globalVar.NAME, globalVar.PROVINCE, globalVar.COUNTRY, globalVar.REVIEWS_DATE, globalVar.REVIEWS_TEXT, globalVar.COMPOUND_SENTIMENT_SCORE]].to_csv(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
     
     # Export average compound analysis grouped by hotel
     hProcessedData = groupDataframe(gProcessedData.copy(),[globalVar.NAME, globalVar.PROVINCE, globalVar.POSTALCODE, globalVar.CATEGORIES, globalVar.PRIMARYCATEGORIES]).agg({
@@ -216,7 +215,7 @@ def initiateAnalysis(data:pd.DataFrame):
     hProcessedData[globalVar.AVERAGE_RATING] = hProcessedData[globalVar.AVERAGE_RATING].round(2)
     hProcessedData[globalVar.REVIEWS_TOTAL] = hProcessedData[globalVar.REVIEWS_TEXT].apply(lambda x: int(len(x.split('<SPLIT> '))))
     hProcessedData[globalVar.REVIEWS_LENGTH] = hProcessedData[globalVar.REVIEWS_TEXT].apply(lambda x: int(len(' '.join(x.split('<SPLIT> ')))))
-    hProcessedData[globalVar.ANALYSISOUTPUTHEADER].to_csv(globalVar.ANALYSISOUTPUTBYHOTEL)
+    hProcessedData[globalVar.ANALYSISOUTPUTHEADER].to_csv(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
 
     return gProcessedData,hProcessedData
 
@@ -224,45 +223,136 @@ def averageRatingCorrelation(processedData:pd.DataFrame):
     df = processedData[[globalVar.AVERAGE_RATING,globalVar.COMPOUND_SENTIMENT_SCORE]].groupby(globalVar.AVERAGE_RATING)[globalVar.COMPOUND_SENTIMENT_SCORE].mean().reset_index()
     correlation,pvalue = pearsonr(processedData[globalVar.AVERAGE_RATING], processedData[globalVar.COMPOUND_SENTIMENT_SCORE])
     print(f"==== Correlation of Average Rating ==== \n{correlation}")
+    return correlation
 
 def averageReviewLengthCorrelation(processedData:pd.DataFrame):
-    processedData[globalVar.AVERAGE_REVIEWS_LENGTH] = processedData[globalVar.REVIEWS_LENGTH] / processedData[globalVar.REVIEWS_TOTAL]
-    correlation,pvalue = pearsonr(processedData[globalVar.AVERAGE_REVIEWS_LENGTH], processedData[globalVar.COMPOUND_SENTIMENT_SCORE])
+    filterprocessedData = processedData.copy()
+    filterprocessedData[globalVar.AVERAGE_REVIEWS_LENGTH] = filterprocessedData[globalVar.REVIEWS_LENGTH] / filterprocessedData[globalVar.REVIEWS_TOTAL]
+    filterprocessedData = filterprocessedData[~filterprocessedData[globalVar.AVERAGE_REVIEWS_LENGTH].isin([np.inf, -np.inf])]
+    filterprocessedData = filterprocessedData.dropna(subset=[globalVar.AVERAGE_REVIEWS_LENGTH])
+    correlation,pvalue = pearsonr(filterprocessedData[globalVar.AVERAGE_REVIEWS_LENGTH], filterprocessedData[globalVar.COMPOUND_SENTIMENT_SCORE])
     print(f"==== Correlation of Average Review Length ==== \n{correlation}")
+    return correlation
 
 def amenitiesCorrelation(processedData:pd.DataFrame):
-    uAmenties = list(set(amenity for amenity_list in processedData[globalVar.AMENITIES] for amenity in amenity_list))
+    filterprocessedData = processedData.copy()
+    uAmenties = list(set(amenity for amenity_list in filterprocessedData[globalVar.AMENITIES] for amenity in amenity_list))
     # Initialize a dictionary to store the binary columns for each amenity
     amenity_columns = {}
     # Create binary columns for each unique amenity
     for amenity in uAmenties:
-        processedData[amenity] = processedData[globalVar.AMENITIES].apply(lambda x: 1 if amenity in x else 0)
-        amenity_columns[amenity] = processedData[amenity]
-    correlation = processedData[uAmenties].corrwith(processedData[globalVar.COMPOUND_SENTIMENT_SCORE])
+        filterprocessedData[amenity] = filterprocessedData[globalVar.AMENITIES].apply(lambda x: 1 if amenity in x else 0)
+        amenity_columns[amenity] = filterprocessedData[amenity]
+    correlation = filterprocessedData[uAmenties].corrwith(filterprocessedData[globalVar.COMPOUND_SENTIMENT_SCORE])
     print(f'==== Correlation of Amenities ==== \n{correlation}')
+    return correlation
 
 def priceCorrelation(processedData:pd.DataFrame):
-    correlation,pvalue = pearsonr(pd.to_numeric(processedData[globalVar.PRICES]), processedData[globalVar.COMPOUND_SENTIMENT_SCORE])
+    filterprocessedData = processedData.copy()
+    filterprocessedData = filterprocessedData.dropna(subset=[globalVar.PRICES])
+    filterprocessedData[globalVar.PRICES] = filterprocessedData[globalVar.PRICES].replace('', 0)
+    correlation,pvalue = pearsonr(pd.to_numeric(filterprocessedData[globalVar.PRICES]), filterprocessedData[globalVar.COMPOUND_SENTIMENT_SCORE])
     print(f'==== Correlation of Price ==== \n{correlation}')
+    return correlation
 
+def provinceCorrelation(processedData:pd.DataFrame):
+    # Step 1: One-Hot Encoding
+    province_dummies = pd.get_dummies(processedData[globalVar.PROVINCE])
+
+    # Step 2: Calculate Correlation
+    correlation = province_dummies.apply(lambda x: x.corr(processedData[globalVar.COMPOUND_SENTIMENT_SCORE]))
+    print(f'==== Correlation of Province ==== \n{correlation}')
+    return correlation
+
+def getWeights(totalCorrelations:dict):
+    # Step 1: Normalize Correlation Coefficients
+    absolute_coefficients = {var: abs(coeff) for var, coeff in totalCorrelations.items()}
+    total_absolute = sum(absolute_coefficients.values())
+    normalized_weights = {var: coeff / total_absolute for var, coeff in absolute_coefficients.items()}
+
+    # Step 2: Use Normalized Coefficients as Weights
+    weights = normalized_weights
+
+    # Print the normalized weights
+    return weights
+
+def predictSentiment(weight):
+    # data_point = {
+    # 'average.reviews.length': 120,
+    # 'average.rating': 1,
+    # 'prices': 400,
+    # 'NY': 1,
+    # 'CA': 0,
+    # 'LA': 0,
+    # 'HI': 0,
+    # 'GA': 0,
+    # 'WA': 0,
+    # 'PA': 0,
+    # 'TX': 0,
+    # 'Wifi': 0,
+    # 'Board games / puzzles': 1,
+    # 'Air conditioning': 0,
+    # 'Non-smoking rooms': 0,
+    # 'Family rooms': 1,
+    # 'Seating area': 0,
+    # 'Free parking': 0,
+    # 'Non-smoking hotel': 0,
+    # 'Private check-in / check-out': 0,
+    # 'Suites': 0,
+    # 'Free High Speed Internet (WiFi)': 0,
+    # 'Shared lounge / TV area': 0,
+    # 'AZ': 0,
+    # 'MO': 0,
+    # 'MD': 0,
+    # 'FL': 0,
+    # 'NJ': 0,
+    # 'IL': 0,
+    # 'MA': 0,
+    # 'NV': 0
+    # }
+    data_point = {
+        'average.reviews.length': 0, #above average
+        'average.rating': 1, #below average
+        'prices': 1, #below average
+        'amenities': 0, #below average
+        'province': 0
+    }
+    # Calculate the weighted sum for the data point
+    weighted_sum = sum(weight[var] * data_point[var] for var in weight)
+    print(weighted_sum)
+    # Interpret the result (e.g., set a threshold)
+    threshold = 0.5  # You can adjust the threshold based on your problem
+    predicted_sentiment = 'Positive' if weighted_sum > threshold else 'Negative'
+
+    # Print the predicted sentiment
+    print("Predicted Sentiment:", predicted_sentiment)
 
 def main():
-    gProcessedData,hProcessedData = initiateAnalysis(processDataFromCsv(globalVar.ANALYSISINPUTFILE))
+    gProcessedData,hProcessedData = initiateAnalysis(processDataFromCsv(globalVar.ANALYSISINPUTFULLFILE))
+    totalCorrelations = {}
     # Correlation analysis
-    averageRatingCorrelation(hProcessedData)
-    averageReviewLengthCorrelation(hProcessedData)
-    amenitiesCorrelation(gProcessedData)
-    priceCorrelation(gProcessedData)
+    totalCorrelations[globalVar.AVERAGE_RATING] = averageRatingCorrelation(hProcessedData)
+    totalCorrelations[globalVar.AVERAGE_REVIEWS_LENGTH] = averageReviewLengthCorrelation(hProcessedData)
+    totalCorrelations[globalVar.PRICES] = priceCorrelation(gProcessedData)
+    totalCorrelations[globalVar.PROVINCE] = provinceCorrelation(gProcessedData).mean()
+    totalCorrelations[globalVar.AMENITIES] = amenitiesCorrelation(gProcessedData).mean()
+    # totalCorrelations.update(provinceCorrelation(gProcessedData).to_dict())
+    # totalCorrelations.update(amenitiesCorrelation(gProcessedData).to_dict())
+    sortedTotalCorrelations= dict(sorted(totalCorrelations.items(), key=lambda item: item[1], reverse=True))
 
-    # analyzeCorrelations(gProcessedData,globalVar.PROVINCE)
+    #Series
+    # provinceCorrelation(gProcessedData)
+    # amenitiesCorrelation(gProcessedData)
+    weight = getWeights(sortedTotalCorrelations)
+    predictSentiment(weight)
+
+
+    # 
     # analyzeCorrelations(gProcessedData,globalVar.CATEGORIES) (budget or luxury)
     # gProcessedData["ReviewDateFormatted"] = pd.to_datetime(gProcessedData[globalVar.REVIEWS_DATE])
     # analyzeCorrelations(gProcessedData,'ReviewDateFormatted')
     # analyzeCorrelations(gProcessedData,'Keywords')
     #.to_csv("outputdata2.csv")
-
-
-    
     
 try:       
     sTime = time.time() 
