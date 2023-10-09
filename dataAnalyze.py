@@ -327,7 +327,7 @@ def predictSentiment(weight):
     # Print the predicted sentiment
     print("Predicted Sentiment:", predicted_sentiment)
 
-def main():
+def dataAnalysis():
     gProcessedData,hProcessedData = initiateAnalysis(processDataFromCsv(globalVar.ANALYSISINPUTFULLFILE))
     totalCorrelations = {}
     # Correlation analysis
@@ -354,14 +354,14 @@ def main():
     # analyzeCorrelations(gProcessedData,'Keywords')
     #.to_csv("outputdata2.csv")
     
-try:       
-    sTime = time.time() 
-    main()
-    eTime = time.time()
-    runtime = eTime - sTime
-    print(f"======= Analyze Information =======")
-    print(f"Runtime: {runtime} seconds")
-    print(f"===================================")
+# try:       
+#     sTime = time.time() 
+#     main()
+#     eTime = time.time()
+#     runtime = eTime - sTime
+#     print(f"======= Analyze Information =======")
+#     print(f"Runtime: {runtime} seconds")
+#     print(f"===================================")
 
-except:
-    traceback.print_exc() 
+# except:
+#     traceback.print_exc() 
