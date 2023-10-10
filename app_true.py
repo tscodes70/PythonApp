@@ -88,6 +88,6 @@ def index():
 if __name__ == "__main__":    
     app.run(debug=True)
 
-result = summary()
-parsed = loads(result)
-print(dumps(parsed, indent=4)) 
+#result = summary()
+#parsed = loads(result)
+#print(dumps(parsed, indent=4)) 
