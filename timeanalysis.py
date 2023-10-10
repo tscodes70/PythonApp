@@ -1,7 +1,8 @@
 import pandas as pd
 import holidays
-from datetime import date
-import numpy as np
+from scipy.stats import pearsonr
+from datetime import datetime
+import calendar
 
 # Load the dataset into a DataFrame
 df = pd.read_csv("analyzedreviews_10-Oct.csv")
@@ -31,33 +32,6 @@ def holiday_name(row):
 # Create a new column to indicate the holiday name or None
 df['is_holiday'] = df.apply(holiday_name, axis=1)
 
-# Convert 'Is Holiday' to binary values (1 for holiday, 0 for not holiday)
-df['is_holiday'] = df['is_holiday'].apply(lambda x: 1 if x != 'Not Holiday' else 0)
-
-# Group by hotel and calculate correlation for each hotel
-hotel_correlations = df.groupby('Hotel Name').apply(lambda group: group['Compound Sentiment'].corr(group['is_holiday']))
-
-# Replace NaN values with a custom message
-hotel_correlations.fillna('Data not enough', inplace=True)
-
-
-# Modify 'is_holiday' to 0 for 'Not Holiday' instances
-#df['is_holiday'] = df['is_holiday'].apply(lambda x: 1 if x == 'Not Holiday' else 0)
-
-# Group by hotel and calculate correlation for each hotel for 'is_holiday' equal to 0
-#hotel_correlations_not_holiday = df.groupby('Hotel Name').apply(lambda group: group['Compound Sentiment'].corr(group['is_holiday']))
-
-# Save the correlation results to an Excel file
-#correlation_excel_path = "hotel_correlations.xlsx"
-#hotel_correlations_df = hotel_correlations.reset_index()  # Resetting index to have 'Hotel Name' as a column
-#hotel_correlations_df.columns = ['Hotel Name', 'Correlation']  # Renaming columns
-
-#with pd.ExcelWriter(correlation_excel_path) as writer:
-#    hotel_correlations_df.to_excel(writer, sheet_name='Hotel_Correlations')
-
-
-print(hotel_correlations)
-
 # Convert 'is_holiday' to binary values (1 for holiday, 0 for not holiday)
 df['is_holiday'] = df['is_holiday'].apply(lambda x: 1 if x != 'Not Holiday' else 0)
 
@@ -81,7 +55,7 @@ name_correlations.fillna('Not enough data', inplace=True)
 # with pd.ExcelWriter(correlation_excel_path) as writer:
 #     name_correlations_df.to_excel(writer, sheet_name='Name_Correlations')
 
-print(name_correlations)
+#print(name_correlations)
 
 # Function to determine what season the month is in
 def get_season(date):
@@ -97,6 +71,42 @@ def get_season(date):
 
 # Create a new column to indicate the season
 df['season'] = df['reviews.date'].apply(get_season)
+
+# Save the DataFrame with the new columns to an Excel file
+# output_file = "data_with_holidays_seasons.xlsx"
+# df.to_excel(output_file, index=False)
+
+# print(f'Data with holidays saved to {output_file}')
+
+
+# Assuming you have a column 'Season' indicating the season for each review
+# Modify this condition based on your dataset structure
+#df['is_winter'] = df['season'].apply(lambda x: 1 if x == 'Winter' else 0)
+df['is_spring'] = df['season'].apply(lambda x: 1 if x == 'Spring' else 0)
+#df['is_summer'] = df['season'].apply(lambda x: 1 if x == 'Summer' else 0)
+#df['is_autumn'] = df['season'].apply(lambda x: 1 if x == 'Autumn' else 0)
+
+
+# Group by hotel and calculate correlation for each hotel
+hotel_correlations_winter = df.groupby('name').apply(lambda group: group['Compound Sentiment'].corr(group['is_winter']))
+hotel_correlations_spring = df.groupby('name').apply(lambda group: group['Compound Sentiment'].corr(group['is_spring']))
+hotel_correlations_summer = df.groupby('name').apply(lambda group: group['Compound Sentiment'].corr(group['is_summer']))
+hotel_correlations_autumn = df.groupby('name').apply(lambda group: group['Compound Sentiment'].corr(group['is_autumn']))
+# Add more correlations for other seasons as needed
+
+# Replace NaN values with a custom message
+hotel_correlations_winter.fillna('Data not enough', inplace=True)
+hotel_correlations_spring.fillna('Data not enough', inplace=True)
+hotel_correlations_summer.fillna('Data not enough', inplace=True)
+hotel_correlations_autumn.fillna('Data not enough', inplace=True)
+# Add more replacements for other seasons as needed
+
+#print("Correlation with Winter:")
+#print(hotel_correlations_winter)
+
+#print("\nCorrelation with Spring:")
+#print(hotel_correlations_spring)
+# Add more prints for other seasons as neede
 
 # Save the DataFrame with the new columns to an Excel file
 # output_file = "data_with_holidays_seasons.xlsx"
