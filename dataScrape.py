@@ -42,11 +42,13 @@ def get_prices(driver):
 
 def header_exists(file_path):
     try:
-        with open(file_path, 'r', newline='') as csvfile:
-            csvreader = csv.reader(csvfile)
-            header = next(csvreader)
-            return header == [globalVar.ADDRESS, globalVar.CATEGORIES, globalVar.CITY, globalVar.COUNTRY, globalVar.NAME, globalVar.POSTALCODE, globalVar.PROVINCE, globalVar.REVIEWS_DATE, globalVar.REVIEWS_RATING, globalVar.REVIEWS_TITLE, globalVar.REVIEWS_TEXT, globalVar.REVIEWS_SOURCEURLS, globalVar.SOURCEURLS, globalVar.AMENITIES, globalVar.PRICES,globalVar.DATEADDED,globalVar.DATEUPDATED,globalVar.PRIMARYCATEGORIES,globalVar.LATITUDE,globalVar.LONGITUDE,globalVar.REVIEWS_USERCITY,globalVar.REVIEWS_USERPROVINCE,globalVar.REVIEWS_USERNAME,globalVar.WEBSITES,globalVar.REVIEWS_DATESEEN,globalVar.KEYS]
-            
+        try:
+            with open(file_path, 'r', newline='') as csvfile:
+                csvreader = csv.reader(csvfile)
+                header = next(csvreader)
+                return header == [globalVar.ADDRESS, globalVar.CATEGORIES, globalVar.CITY, globalVar.COUNTRY, globalVar.NAME, globalVar.POSTALCODE, globalVar.PROVINCE, globalVar.REVIEWS_DATE, globalVar.REVIEWS_RATING, globalVar.REVIEWS_TITLE, globalVar.REVIEWS_TEXT, globalVar.REVIEWS_SOURCEURLS, globalVar.SOURCEURLS, globalVar.AMENITIES, globalVar.PRICES,globalVar.DATEADDED,globalVar.DATEUPDATED,globalVar.PRIMARYCATEGORIES,globalVar.LATITUDE,globalVar.LONGITUDE,globalVar.REVIEWS_USERCITY,globalVar.REVIEWS_USERPROVINCE,globalVar.REVIEWS_USERNAME,globalVar.WEBSITES,globalVar.REVIEWS_DATESEEN,globalVar.KEYS]
+        except StopIteration:
+            return False 
     except FileNotFoundError:
         return False
 
@@ -94,7 +96,8 @@ def get_reviews_data(driver, csvWriter):
         csvWriter.writerow([address, categories, city, country, hotel_name, postal_code, province, date, rating_one_digit, title, review, source_url, href_value, combined_amenities, cleaned_prices])
 
 def dataScraper():
-    urls = globalVar.SCRAPE_URLS
+    print(globalVar.SCRAPE_URLS)
+    urls = globalVar.SCRAPE_URLS.split(',')
     # Define the custom user-agent
     # Configure Chrome WebDriver with custom user-agent
     options = webdriver.ChromeOptions()
@@ -133,3 +136,4 @@ def dataScraper():
     driver.quit()
     csvFile.close()
 
+dataScraper()
