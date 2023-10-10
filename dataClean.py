@@ -299,7 +299,7 @@ def readScrapeCsv(filename: str) -> pd.DataFrame:
 
 
 def dataCleaner():
-    dataFrame = readScrapeCsv(globalVar.CLEANERINPUTFULLFILE)
+    dataFrame = readScrapeCsv(globalVar.CLEANERCUSTOMFULLFILE)
     cleanedDataFrame = dataCleaning(dataFrame)
     cleanedDataFrame[globalVar.AMENITIES] = cleanedDataFrame[globalVar.AMENITIES].str.replace("[", "").str.replace("]", "").str.replace("'", "")
     cleanedDataFrame[globalVar.AMENITIES] = cleanedDataFrame.apply(split_amenities, axis=1)
