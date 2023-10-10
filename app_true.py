@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, redirect
+from flask import Flask, render_template, request, session
 from flask_bootstrap import Bootstrap
 import pandas as pd
 import plotly.graph_objs as go
@@ -20,8 +20,6 @@ TODO
 -- Compare : Compare stats of hotel to similar hotels in budget ranking (NOT ADDED)
 -- View Summary : view all cleaned hotel info in a table with search, can export this data(VIEW TABLE DONE, EXPORT NOT ADDED)
 -- Upload new Dataset : go back to start to get a new dataset
-
-> predictive analysis?
 '''
 
 app = Flask(__name__)
@@ -62,9 +60,12 @@ def navigation():
     ratingColumn = globalVar.AVERAGE_RATING
     histogram = px.histogram(df, x=ratingColumn, title=f'Histogram of Average Rating')
     histogram_div = histogram.to_html()
+
+    pie_chart_div2 = pie_chart.to_html(full_html=False)
+    histogram_div2 = histogram.to_html()
     # table data
     
-    return render_template('userDashboard.html', pie_chart_div=pie_chart_div, histogram_div=histogram_div)
+    return render_template('userDashboard.html', pie_chart_div=pie_chart_div, histogram_div=histogram_div, histogram_div2=histogram_div2, pie_chart_div2=pie_chart_div2)
 
 def openCsv():
     # takes data from [FROM read data] and loads it into a pandas dataframe
@@ -72,7 +73,7 @@ def openCsv():
     df.columns = df.columns.str.replace('.', '_')
     return df
 
-@app.route('/api/data')
+@app.route('/api/general')
 def summary():
      df = openCsv()
      jsonfile = df.to_json(orient='table')
@@ -83,11 +84,8 @@ def index():
     df = openCsv()
     #column_val = df.columns.values
     #return render_template("viewSummary.html", column_names=column_val, row_data=list(df.values.tolist()),zip=zip)
-    return render_template("testTable.html", title="View Summary")
+    return render_template("viewSummary.html", title="View Summary")
 
 if __name__ == "__main__":    
     app.run(debug=True)
 
-#result = summary()
-#parsed = loads(result)
-#print(dumps(parsed, indent=4)) 

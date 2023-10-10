@@ -11,6 +11,7 @@
 
 {% block body %}
   <div class="container">
+  
       <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
           <li class="nav-item">
             <a class="nav-link active" id="pills-home-tab" data-toggle="pill" href="#pills-home" role="tab" aria-controls="pills-home" aria-selected="true">Home</a>
@@ -22,35 +23,22 @@
             <a class="nav-link" id="pills-contact-tab" data-toggle="pill" href="#pills-contact" role="tab" aria-controls="pills-contact" aria-selected="false">Compare</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" id="export" href="viewSummary.html" aria-controls="pills-contact" aria-selected="false">View Summary</a>
+            <a class="nav-link" id="export" href="/table" aria-controls="pills-contact" aria-selected="false">View Summary</a>
           </li>
-        </ul>
+      </ul>
 
-        <div class="tab-content" id="pills-tabContent">
-          <div class="tab-pane fade show active" id="pills-home" role="tabpanel">
-              <h1>Welcome, {}</h1>
-                <h3>Catergories of the accomodations</h3>
-              <div>{{ pie_chart_div|safe }}</div>
-                <h3>Average Rating of the accomodations</h3>
-              <div>{{ histogram_div|safe }}</div>
-              <table id='analysed_data' class="display">
-                <thead>
-                  <tr>
-                    <th>Hotel Name</th>
-                    <th>Province</th>
-                    <th>Postal Code</th>
-                    <th>Categories</th>
-                    <th>Primary Categories</th>
-                    <th>Compound Sentiment</th>
-                    <th>Review Summary</th>
-                    <th>Total Reviews</th>
-                    <th>Popular Keywords</th>
-                    <th>Average Rating</th>
-                  </tr>
-                </thead>
-                <tbody>
-                </tbody>
-                <tfoot>
+      <div class="tab-content" id="pills-tabContent">
+          
+        <div class="tab-pane fade show active" id="pills-home" role="tabpanel">
+            <h1>Welcome, {}</h1>
+              <h3>Catergories of the accomodations</h3>
+            <div>{{ pie_chart_div|safe }}</div>
+              <h3>Average Rating of the accomodations</h3>
+            <div>{{ histogram_div|safe }}</div>
+            
+            <table id='analysed_data' class="display">
+              <thead>
+                <tr>
                   <th>Hotel Name</th>
                   <th>Province</th>
                   <th>Postal Code</th>
@@ -61,36 +49,116 @@
                   <th>Total Reviews</th>
                   <th>Popular Keywords</th>
                   <th>Average Rating</th>
-                </tfoot>
-              </table>
-              <br>
-              <script>
-                  $(document).ready( function () {
-                      $('#analysed_data').DataTable( {
-                          search: {
-                          return: true
-                          },
-                          ajax:{
-                              url:'/api/general',
-                          },
-                          columns: [
-                              {data: 'name'},
-                              {data: 'province'},
-                              {data: 'postalCode'},
-                              {data: 'categories', visible:false},
-                              {data: 'primaryCategories', visible: false},
-                              {data: 'Compound Sentiment', visible: false},
-                              {data: 'reviews_summary'},
-                              {data: 'reviews_total'},
-                              {data: 'popular_keywords', visible: false},
-                              {data: 'average_rating'}
-                          ]
-                      });
-                  });
-              </script>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+              <tfoot>
+                <th>Hotel Name</th>
+                <th>Province</th>
+                <th>Postal Code</th>
+                <th>Categories</th>
+                <th>Primary Categories</th>
+                <th>Compound Sentiment</th>
+                <th>Review Summary</th>
+                <th>Total Reviews</th>
+                <th>Popular Keywords</th>
+                <th>Average Rating</th>
+              </tfoot>
+            </table>
+            <br>
+            <script>
+                $(document).ready( function () {
+                    $('#analysed_data').DataTable( {
+                        search: {
+                        return: true
+                        },
+                        autoWidth:false, 
+                        ajax:{
+                            url:'/api/general',
+                        },
+                        columns: [
+                            {data: 'name'},
+                            {data: 'province'},
+                            {data: 'postalCode'},
+                            {data: 'categories', visible:false},
+                            {data: 'primaryCategories', visible: false},
+                            {data: 'Compound Sentiment', visible: false},
+                            {data: 'reviews_summary'},
+                            {data: 'reviews_total'},
+                            {data: 'popular_keywords', visible: false},
+                            {data: 'average_rating'}
+                        ]
+                    });
+                });
+            </script>
 
           </div>
-          <div class="tab-pane fade" id="pills-profile" role="tabpanel">...
+
+          <div class="tab-pane fade" id="pills-profile" role="tabpanel">
+            
+            <h1>General Overview</h1>
+            <h3>Catergories of the accomodations</h3>
+            <div>{{ pie_chart_div2|safe }}</div>
+            <h3>Average Rating of the accomodations</h3>
+            <div>{{ histogram_div2|safe }}</div>
+
+            <table id='all_data_table' class="display">
+              <thead>
+                <tr>
+                  <th>Hotel Name</th>
+                  <th>Province</th>
+                  <th>Postal Code</th>
+                  <th>Categories</th>
+                  <th>Primary Categories</th>
+                  <th>Compound Sentiment</th>
+                  <th>Review Summary</th>
+                  <th>Total Reviews</th>
+                  <th>Popular Keywords</th>
+                  <th>Average Rating</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+              <tfoot>
+                <th>Hotel Name</th>
+                <th>Province</th>
+                <th>Postal Code</th>
+                <th>Categories</th>
+                <th>Primary Categories</th>
+                <th>Compound Sentiment</th>
+                <th>Review Summary</th>
+                <th>Total Reviews</th>
+                <th>Popular Keywords</th>
+                <th>Average Rating</th>
+              </tfoot>
+            </table>
+
+            <script>
+                $(document).ready( function () {
+                    $('#all_data_table').DataTable( {
+                        search: {
+                        return: true
+                        },
+                        autoWidth:false,
+                        ajax:{
+                            url:'/api/general',
+                        },
+                        columns: [
+                            {data: 'name'},
+                            {data: 'province'},
+                            {data: 'postalCode'},
+                            {data: 'categories', visible:false},
+                            {data: 'primaryCategories', visible: false},
+                            {data: 'Compound Sentiment', visible: false},
+                            {data: 'reviews_summary'},
+                            {data: 'reviews_total'},
+                            {data: 'popular_keywords', visible: false},
+                            {data: 'average_rating'}
+                        ]
+                    });
+                });
+            </script>
           </div>
           <div class="tab-pane fade" id="pills-contact" role="tabpanel">...
           </div>
