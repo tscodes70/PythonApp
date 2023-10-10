@@ -1,92 +1,181 @@
-<!-- This is a base code that can be extended to every page -->
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <title>Hotel Sentiment Analysis</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="X-UA-Compatible" content="ie-edge">
-        <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-    </head>
-    <header>
-        <div class="header" style="background-color: #005580;">
-            <h2 style="text-align:center;">Hotel Review Sentiment Analysis</h2>
+{% extends "new_base.html"%} 
+
+{% block head %}
+<head>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+</head>
+{% endblock %}
+
+{% block body %}
+  <div class="container">
+  
+      <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" id="pills-home-tab" data-toggle="pill" href="#pills-home" role="tab" aria-controls="pills-home" aria-selected="true">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="pills-profile-tab" data-toggle="pill" href="#pills-profile" role="tab" aria-controls="pills-profile" aria-selected="false">General Overview</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="pills-contact-tab" data-toggle="pill" href="#pills-contact" role="tab" aria-controls="pills-contact" aria-selected="false">Compare</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="export" href="/table" aria-controls="pills-contact" aria-selected="false">View Summary</a>
+          </li>
+      </ul>
+
+      <div class="tab-content" id="pills-tabContent">
+          
+        <div class="tab-pane fade show active" id="pills-home" role="tabpanel">
+          <form>
+            <div class="form-group">
+              <label for="selector">Choose a Hotel</label>
+                <select class="custom-select">
+                  {% for option in columnhead %}
+                    <option>{{ option }}</option>
+                  {% endfor%}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </form>
+          <br>
+            <h1>Welcome, ..{}</h1>
+              <h3>Catergories of the accomodations</h3>
+            <div>{{ pie_chart_div|safe }}</div>
+              <h3>Average Rating of the accomodations</h3>
+            <div>{{ histogram_div|safe }}</div>
+            
+            <table id='analysed_data' class="display">
+              <thead>
+                <tr>
+                  <th>Hotel Name</th>
+                  <th>Province</th>
+                  <th>Postal Code</th>
+                  <th>Categories</th>
+                  <th>Primary Categories</th>
+                  <th>Compound Sentiment</th>
+                  <th>Review Summary</th>
+                  <th>Total Reviews</th>
+                  <th>Popular Keywords</th>
+                  <th>Average Rating</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+              <tfoot>
+                <th>Hotel Name</th>
+                <th>Province</th>
+                <th>Postal Code</th>
+                <th>Categories</th>
+                <th>Primary Categories</th>
+                <th>Compound Sentiment</th>
+                <th>Review Summary</th>
+                <th>Total Reviews</th>
+                <th>Popular Keywords</th>
+                <th>Average Rating</th>
+              </tfoot>
+            </table>
+            <br>
+            <script>
+                $(document).ready( function () {
+                    $('#analysed_data').DataTable( {
+                        search: {
+                        return: true
+                        },
+                        autoWidth:false, 
+                        ajax:{
+                            url:'/api/general',
+                        },
+                        columns: [
+                            {data: 'name'},
+                            {data: 'province'},
+                            {data: 'postalCode'},
+                            {data: 'categories', visible:false},
+                            {data: 'primaryCategories', visible: false},
+                            {data: 'Compound Sentiment', visible: false},
+                            {data: 'reviews_summary'},
+                            {data: 'reviews_total'},
+                            {data: 'popular_keywords', visible: false},
+                            {data: 'average_rating'}
+                        ]
+                    });
+                });
+            </script>
+
+          </div>
+
+          <div class="tab-pane fade" id="pills-profile" role="tabpanel">
+            
+            <h1>General Overview</h1>
+            <h3>Catergories of the accomodations</h3>
+            <div>{{ pie_chart_div2|safe }}</div>
+            <h3>Average Rating of the accomodations</h3>
+            <div>{{ histogram_div2|safe }}</div>
+            <h3>Correlation of Compound Sentiment</h3>
+            <div>{{ correlationgraph|safe}}</div>
+
+            <table id='all_data_table' class="display">
+              <thead>
+                <tr>
+                  <th>Hotel Name</th>
+                  <th>Province</th>
+                  <th>Postal Code</th>
+                  <th>Categories</th>
+                  <th>Primary Categories</th>
+                  <th>Compound Sentiment</th>
+                  <th>Review Summary</th>
+                  <th>Total Reviews</th>
+                  <th>Popular Keywords</th>
+                  <th>Average Rating</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+              <tfoot>
+                <th>Hotel Name</th>
+                <th>Province</th>
+                <th>Postal Code</th>
+                <th>Categories</th>
+                <th>Primary Categories</th>
+                <th>Compound Sentiment</th>
+                <th>Review Summary</th>
+                <th>Total Reviews</th>
+                <th>Popular Keywords</th>
+                <th>Average Rating</th>
+              </tfoot>
+            </table>
+
+            <script>
+                $(document).ready( function () {
+                    $('#all_data_table').DataTable( {
+                        search: {
+                        return: true
+                        },
+                        autoWidth:false,
+                        ajax:{
+                            url:'/api/general',
+                        },
+                        columns: [
+                            {data: 'name'},
+                            {data: 'province'},
+                            {data: 'postalCode'},
+                            {data: 'categories', visible:false},
+                            {data: 'primaryCategories', visible: false},
+                            {data: 'Compound Sentiment', visible: false},
+                            {data: 'reviews_summary'},
+                            {data: 'reviews_total'},
+                            {data: 'popular_keywords', visible: false},
+                            {data: 'average_rating'}
+                        ]
+                    });
+                });
+            </script>
+          </div>
+          <div class="tab-pane fade" id="pills-contact" role="tabpanel">...
+          </div>
         </div>
-    </header>
-    <body>
-        <div class="container">
-            <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
-                <li class="nav-item">
-                  <a class="nav-link active" id="pills-home-tab" data-toggle="pill" href="#pills-home" role="tab" aria-controls="pills-home" aria-selected="true">Home</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" id="pills-profile-tab" data-toggle="pill" href="#pills-profile" role="tab" aria-controls="pills-profile" aria-selected="false">Sentiment Analysis</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" id="pills-contact-tab" data-toggle="pill" href="#pills-contact" role="tab" aria-controls="pills-contact" aria-selected="false">Compare</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="export" data-toggle="pill" href="#pills-contact" role="tab" aria-controls="pills-contact" aria-selected="false">Export</a>
-                </li>
-              </ul>
-              <div class="tab-content" id="pills-tabContent">
-                <div class="tab-pane fade show active" id="pills-home" role="tabpanel">
-                    <h1>General Hotel Review</h1>
-                    <h2>Pie Chart</h2>
-                    <h3>Catergories of the accomodations</h3>
-                    <div>{{ pie_chart_div|safe }}</div>
-                    <h2>Histogram</h2>
-                    <h3>Average Rating of the {{ hotelName }}</h3>
-                    <label for="hotelName-dropdown-histogram">Select a Hotel:</label>
-                    <form method="POST" action="{{ url_for('histogram') }}">
-                        <select id="hotelName-dropdown-histogram" name="hotelName-dropdown-histogram">
-                            <option value="">All</option>
-                            <!-- Dropdown options will be populated dynamically using JavaScript -->
-                            {% for hotelName in hotelNames %}
-                                <option value="{{ hotelName }}">{{ hotelName }}</option>
-                            {% endfor %}
-                        </select>
-                        <input type="submit" value="Generate Word Cloud">
-                    </form>
-                    <div>{{ histogram_div|safe }}</div>
-                    <!--<h3>Word Cloud on the Review Summary</h3>
-                    <img src="data:image/png;base64,{{ img_data }}" alt="Word Cloud">-->
-                    <h3>{{ wordcloud_heading }}</h3>
-                    <label for="hotelName-dropdown">Select a Hotel:</label>
-                    <form method="POST" action="{{ url_for('wordcloud') }}">
-                        <select id="hotelName-dropdown" name="hotelName-dropdown">
-                            <option value="">All</option>
-                            <!-- Dropdown options will be populated dynamically using JavaScript -->
-                            {% for hotelName in hotelNames %}
-                                <option value="{{ hotelName }}">{{ hotelName }}</option>
-                            {% endfor %}
-                        </select>
-                        <input type="submit" value="Generate Word Cloud">
-                    </form>
-                    <div id="filtered-data">
-                        <!-- Filtered data will be displayed here -->
-                    </div>
-                    <div id="wordcloud-container">
-                        <!-- Word cloud will be displayed here -->
-                        <img src="data:image/png;base64,{{ img_data }}" alt="Word Cloud">
-                    </div>
-
-                    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-                    <!--<script src="{{ url_for('static', filename='filter.js') }}"></script>-->
-                </div>
-                <div class="tab-pane fade" id="pills-profile" role="tabpanel">...
-
-                </div>
-                <div class="tab-pane fade" id="pills-contact" role="tabpanel">...
-
-                </div>
-                <div class="tab-pane fade" id="pills-contact" role="tabpanel">...
-
-                </div>
-              </div>
-        </div>
-    </body>
-</html>
+</div>
+{% endblock %}

@@ -76,4 +76,5 @@ df['season'] = df['reviews.date'].apply(get_season)
 # output_file = "data_with_holidays_seasons.xlsx"
 # df.to_excel(output_file, index=False)
 
+
 # print(f'Data with holidays saved to {output_file}')
