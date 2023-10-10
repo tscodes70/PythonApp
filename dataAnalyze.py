@@ -194,14 +194,14 @@ def processDataFromCsv(cleanCsvFilename:str) -> pd.DataFrame:
             average_rating.append(float(row[globalVar.REVIEWS_RATING]))
     return pd.DataFrame(data)
 
-def initiateAnalysis(data:pd.DataFrame):
+def initiateAnalysis(data:pd.DataFrame, OUTPUTREVIEWFULLFILE,OUTPUTHOTELFULLFILE):
     # Prepare Base Analysis
     sia = SentimentIntensityAnalyzer()
     data[globalVar.SENTIMENT_SCORE] = data[globalVar.REVIEWS_TEXT].apply(lambda x: sia.polarity_scores(x))
     data[globalVar.COMPOUND_SENTIMENT_SCORE] = data[globalVar.SENTIMENT_SCORE].apply(lambda x: x['compound'])
     gProcessedData = data.copy()
     # Export individual review analysis
-    gProcessedData[[globalVar.NAME, globalVar.PROVINCE, globalVar.COUNTRY, globalVar.REVIEWS_DATE, globalVar.REVIEWS_TEXT, globalVar.COMPOUND_SENTIMENT_SCORE]].to_csv(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
+    gProcessedData[[globalVar.NAME, globalVar.PROVINCE, globalVar.COUNTRY, globalVar.REVIEWS_DATE, globalVar.REVIEWS_TEXT, globalVar.COMPOUND_SENTIMENT_SCORE]].to_csv(OUTPUTREVIEWFULLFILE)
     
     # Export average compound analysis grouped by hotel
     hProcessedData = groupDataframe(gProcessedData.copy(),[globalVar.NAME, globalVar.PROVINCE, globalVar.POSTALCODE, globalVar.CATEGORIES, globalVar.PRIMARYCATEGORIES]).agg({
@@ -215,7 +215,7 @@ def initiateAnalysis(data:pd.DataFrame):
     hProcessedData[globalVar.AVERAGE_RATING] = hProcessedData[globalVar.AVERAGE_RATING].round(2)
     hProcessedData[globalVar.REVIEWS_TOTAL] = hProcessedData[globalVar.REVIEWS_TEXT].apply(lambda x: int(len(x.split('<SPLIT> '))))
     hProcessedData[globalVar.REVIEWS_LENGTH] = hProcessedData[globalVar.REVIEWS_TEXT].apply(lambda x: int(len(' '.join(x.split('<SPLIT> ')))))
-    hProcessedData[globalVar.ANALYSISOUTPUTHEADER].to_csv(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+    hProcessedData[globalVar.ANALYSISOUTPUTHEADER].to_csv(OUTPUTHOTELFULLFILE)
 
     return gProcessedData,hProcessedData
 
@@ -327,24 +327,26 @@ def predictSentiment(weight):
     # Print the predicted sentiment
     print("Predicted Sentiment:", predicted_sentiment)
 
-def dataAnalysis():
-    gProcessedData,hProcessedData = initiateAnalysis(processDataFromCsv(globalVar.ANALYSISINPUTFULLFILE))
-    totalCorrelations = {}
-    # Correlation analysis
-    totalCorrelations[globalVar.AVERAGE_RATING] = averageRatingCorrelation(hProcessedData)
-    totalCorrelations[globalVar.AVERAGE_REVIEWS_LENGTH] = averageReviewLengthCorrelation(hProcessedData)
-    totalCorrelations[globalVar.PRICES] = priceCorrelation(gProcessedData)
-    totalCorrelations[globalVar.PROVINCE] = provinceCorrelation(gProcessedData).mean()
-    totalCorrelations[globalVar.AMENITIES] = amenitiesCorrelation(gProcessedData).mean()
-    # totalCorrelations.update(provinceCorrelation(gProcessedData).to_dict())
-    # totalCorrelations.update(amenitiesCorrelation(gProcessedData).to_dict())
-    sortedTotalCorrelations= dict(sorted(totalCorrelations.items(), key=lambda item: item[1], reverse=True))
+def dataAnalysis(INPUTFULLFILE,OUTPUTREVIEWFULLFILE,OUTPUTHOTELFULLFILE,GETCORRELATIONS):
+    gProcessedData,hProcessedData = initiateAnalysis(processDataFromCsv(INPUTFULLFILE),OUTPUTREVIEWFULLFILE,OUTPUTHOTELFULLFILE)
 
-    #Series
-    # provinceCorrelation(gProcessedData)
-    # amenitiesCorrelation(gProcessedData)
-    weight = getWeights(sortedTotalCorrelations)
-    predictSentiment(weight)
+    if GETCORRELATIONS:
+        totalCorrelations = {}
+        # Correlation analysis
+        totalCorrelations[globalVar.AVERAGE_RATING] = averageRatingCorrelation(hProcessedData)
+        totalCorrelations[globalVar.AVERAGE_REVIEWS_LENGTH] = averageReviewLengthCorrelation(hProcessedData)
+        totalCorrelations[globalVar.PRICES] = priceCorrelation(gProcessedData)
+        totalCorrelations[globalVar.PROVINCE] = provinceCorrelation(gProcessedData).mean()
+        totalCorrelations[globalVar.AMENITIES] = amenitiesCorrelation(gProcessedData).mean()
+        # totalCorrelations.update(provinceCorrelation(gProcessedData).to_dict())
+        # totalCorrelations.update(amenitiesCorrelation(gProcessedData).to_dict())
+        sortedTotalCorrelations= dict(sorted(totalCorrelations.items(), key=lambda item: item[1], reverse=True))
+
+        #Series
+        # provinceCorrelation(gProcessedData)
+        # amenitiesCorrelation(gProcessedData)
+        weight = getWeights(sortedTotalCorrelations)
+        predictSentiment(weight)
 
 
     # 

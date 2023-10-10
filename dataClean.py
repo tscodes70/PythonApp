@@ -157,17 +157,34 @@ def replace_country_name(country_name):
 # Define a function to convert date strings to the desired format
 def custom_date_parser(date_string):
     # Regular expressions to match different date formats
+    date_string = date_string.replace("Sept", "Sep")
     regex_formats = [
         (r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$', '%Y-%m-%dT%H:%M:%SZ'),  # Already in the correct format
         (r'^\d{2}-[A-Z][a-z]{2}-\d{2}$', '%d-%b-%y'),  # e.g., 5-Oct-23
-        (r'^[A-Z][a-z]{2}-\d{2}$', '%b-%y'),  # e.g., Jul-14
+        (r'^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{2}$', '%b-%y'),  # e.g., Jul-14
+        (r"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4}$", '%b %Y')  # e.g., Jul 2014
+    ]
+    regex_formats2 = [
+        (r"^\d{1} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$"),  # e.g., 1 Jul
+        (r"^\d{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$")  # e.g., 10 Jul
     ]
 
     # Loop through regex formats and try to match
     for regex, format_str in regex_formats:
         if re.match(regex, date_string):
-            return pd.to_datetime(date_string, format=format_str).strftime('%Y-%m-%dT00:00:00Z')
+            return str(pd.to_datetime(date_string, format=format_str).strftime('%Y-%m-%dT00:00:00Z'))
+    
+    for regex in regex_formats2: 
+        if re.match(regex, date_string):
+            parsed_date = pd.to_datetime(date_string, format='%d %b')
+            current_year = pd.Timestamp.now().year
+            return f'{current_year:04d}-{parsed_date.month:02d}-{parsed_date.day:02d}T00:00:00Z'
 
+    if date_string == "review Yesterday":
+        current_day = pd.Timestamp.now().day
+        current_month = pd.Timestamp.now().month
+        current_year = pd.Timestamp.now().year
+        return f'{current_year:04d}-{current_month:02d}-{int(current_day)-1:02d}T00:00:00Z'
     # For the "5-Oct" format, parse it differently
     try:
         parsed_date = pd.to_datetime(date_string, format='%d-%b')
@@ -298,8 +315,8 @@ def readScrapeCsv(filename: str) -> pd.DataFrame:
     return pd.DataFrame(data)
 
 
-def dataCleaner():
-    dataFrame = readScrapeCsv(globalVar.CLEANERCUSTOMFULLFILE)
+def dataCleaner(INPUTFULLFILE,OUTPUTFULLFILE):
+    dataFrame = readScrapeCsv(INPUTFULLFILE)
     cleanedDataFrame = dataCleaning(dataFrame)
     cleanedDataFrame[globalVar.AMENITIES] = cleanedDataFrame[globalVar.AMENITIES].str.replace("[", "").str.replace("]", "").str.replace("'", "")
     cleanedDataFrame[globalVar.AMENITIES] = cleanedDataFrame.apply(split_amenities, axis=1)
@@ -308,13 +325,15 @@ def dataCleaner():
 
     # Check if the dataclean.csv file exists
     try:
-        existing_data = pd.read_csv(globalVar.CLEANEROUTPUTFULLFILE)
+        existing_data = pd.read_csv(OUTPUTFULLFILE)
         # Append the cleaned data to the existing data
         combined_data = pd.concat([existing_data, cleanedDataFrame], ignore_index=True)
         # Save the combined data to the dataclean.csv file
-        combined_data.to_csv(globalVar.CLEANEROUTPUTFULLFILE, index=False)
-        print(f"Data appended to {globalVar.CLEANEROUTPUTFULLFILE}")
+        combined_data.to_csv(OUTPUTFULLFILE, index=False)
+        print(f"Data appended to {OUTPUTFULLFILE}")
     except FileNotFoundError:
         # If the file doesn't exist, save the cleaned data directly
-        cleanedDataFrame.to_csv(globalVar.CLEANEROUTPUTFULLFILE, index=False)
-        print(f"Data saved to {globalVar.CLEANEROUTPUTFULLFILE}")
+        cleanedDataFrame.to_csv(OUTPUTFULLFILE, index=False)
+        print(f"Data saved to {OUTPUTFULLFILE}")
+
+
