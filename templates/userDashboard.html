@@ -16,41 +16,54 @@
             <a class="nav-link active" id="pills-home-tab" data-toggle="pill" href="#pills-home" role="tab" aria-controls="pills-home" aria-selected="true">Home</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" id="pills-profile-tab" data-toggle="pill" href="#pills-profile" role="tab" aria-controls="pills-profile" aria-selected="false">Sentiment Analysis</a>
+            <a class="nav-link" id="pills-profile-tab" data-toggle="pill" href="#pills-profile" role="tab" aria-controls="pills-profile" aria-selected="false">General Overview</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" id="pills-contact-tab" data-toggle="pill" href="#pills-contact" role="tab" aria-controls="pills-contact" aria-selected="false">Compare</a>
           </li>
           <li class="nav-item">
-              <a class="nav-link" id="export" data-toggle="pill" href="#pills-contact" role="tab" aria-controls="pills-contact" aria-selected="false">Export</a>
+            <a class="nav-link" id="export" href="viewSummary.html" aria-controls="pills-contact" aria-selected="false">View Summary</a>
           </li>
         </ul>
+
         <div class="tab-content" id="pills-tabContent">
           <div class="tab-pane fade show active" id="pills-home" role="tabpanel">
               <h1>Welcome, {}</h1>
-              <h3>Catergories of the accomodations</h3>
+                <h3>Catergories of the accomodations</h3>
               <div>{{ pie_chart_div|safe }}</div>
-              <h3>Average Rating of the accomodations</h3>
+                <h3>Average Rating of the accomodations</h3>
               <div>{{ histogram_div|safe }}</div>
-                <table id='analysed_data' class="display">
-                  <thead>
-                      <tr>
-                          <th>Hotel Name</th>
-                          <th>Province</th>
-                          <th>Postal Code</th>
-                          <th>Categories</th>
-                          <th>Primary Categories</th>
-                          <th>Compound Sentiment</th>
-                          <th>Review Summary</th>
-                          <th>Total Reviews</th>
-                          <th>Popular Keywords</th>
-                          <th>Average Rating</th>
-                      </tr>
-                  <tbody>
-                  </tbody>
-                  <tfoot>
-                  </tfoot>
+              <table id='analysed_data' class="display">
+                <thead>
+                  <tr>
+                    <th>Hotel Name</th>
+                    <th>Province</th>
+                    <th>Postal Code</th>
+                    <th>Categories</th>
+                    <th>Primary Categories</th>
+                    <th>Compound Sentiment</th>
+                    <th>Review Summary</th>
+                    <th>Total Reviews</th>
+                    <th>Popular Keywords</th>
+                    <th>Average Rating</th>
+                  </tr>
+                </thead>
+                <tbody>
+                </tbody>
+                <tfoot>
+                  <th>Hotel Name</th>
+                  <th>Province</th>
+                  <th>Postal Code</th>
+                  <th>Categories</th>
+                  <th>Primary Categories</th>
+                  <th>Compound Sentiment</th>
+                  <th>Review Summary</th>
+                  <th>Total Reviews</th>
+                  <th>Popular Keywords</th>
+                  <th>Average Rating</th>
+                </tfoot>
               </table>
+              <br>
               <script>
                   $(document).ready( function () {
                       $('#analysed_data').DataTable( {
@@ -58,7 +71,7 @@
                           return: true
                           },
                           ajax:{
-                              url:'/api/data',
+                              url:'/api/general',
                           },
                           columns: [
                               {data: 'name'},
@@ -75,13 +88,12 @@
                       });
                   });
               </script>
+
           </div>
           <div class="tab-pane fade" id="pills-profile" role="tabpanel">...
           </div>
           <div class="tab-pane fade" id="pills-contact" role="tabpanel">...
-
           </div>
-
-</div>
+        </div>
 </div>
 {% endblock %}
