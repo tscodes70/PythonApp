@@ -208,8 +208,8 @@ def predictiveModelling(dataframe:pd.DataFrame):
 
 #     return dataframe
 
-def handleMissingData():
-    df = processDataFromCsv(globalVar.MDINPUTFULLFILE)
+def handleMissingData(INPUTCLEANFULLFILE,OUTPUTMDFULLFILE):
+    df = processDataFromCsv(INPUTCLEANFULLFILE)
     # adf = groupDataframe(df,[globalVar.NAME, globalVar.PROVINCE, globalVar.POSTALCODE, globalVar.CATEGORIES, globalVar.PRIMARYCATEGORIES, globalVar.AMENITIES, globalVar.PRICES]).agg({
     # globalVar.REVIEWS_TEXT: lambda x: x,
     # globalVar.REVIEWS_CLEANTEXT: lambda z:z,
@@ -227,4 +227,4 @@ def handleMissingData():
     newfdf = fdf[[globalVar.POSTALCODE,globalVar.AMENITIES]]
     df.update(newfdf)
     df[globalVar.PRICES] = df[globalVar.PRICES].replace('', 0)
-    df.to_csv(globalVar.MDOUTPUTFULLFILE)
+    df.to_csv(OUTPUTMDFULLFILE)
