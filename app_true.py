@@ -47,7 +47,7 @@ def uploadFile():
 def navigation():
     # Load the CSV data into a Pandas DataFrame
     df = pd.read_csv('../csvs/analyzedhotels_10-Oct.csv')
-
+    columnhead = df['name'].tolist()
     # Assuming the CSV has a 'Category' column, get the top 4 values
     top_categories = df[globalVar.CATEGORIES].value_counts().nlargest(4)
 
@@ -61,11 +61,26 @@ def navigation():
     histogram = px.histogram(df, x=ratingColumn, title=f'Histogram of Average Rating')
     histogram_div = histogram.to_html()
 
+    #PLACEHOLDER FOR GENERAL OVERVIEW GRAPHS
     pie_chart_div2 = pie_chart.to_html(full_html=False)
     histogram_div2 = histogram.to_html()
-    # table data
-    
-    return render_template('userDashboard.html', pie_chart_div=pie_chart_div, histogram_div=histogram_div, histogram_div2=histogram_div2, pie_chart_div2=pie_chart_div2)
+
+    # Perform rank correlation analysis (e.g., Spearman's rank correlation)
+    # Replace 'column1' and 'column2' with the columns you want to analyze
+    correlation_value = df[globalVar.COMPOUND_SENTIMENT_SCORE].corr(df[globalVar.AVERAGE_RATING], method='spearman')
+
+    # Create a Plotly scatter plot with the correlation value
+    correlationgraph = go.Figure(data=go.Scatter(x=[0], y=[correlation_value], mode='markers+text'))
+    correlationgraph.update_layout(
+        title='Rank Correlation',
+        xaxis_title='X-axis',
+        yaxis_title='Y-axis',
+        showlegend=False
+    )
+    correlationgraph = correlationgraph.to_html()
+
+    return render_template('userDashboard.html', columnhead=columnhead,pie_chart_div=pie_chart_div, histogram_div=histogram_div, 
+                           histogram_div2=histogram_div2, pie_chart_div2=pie_chart_div2,correlationgraph=correlationgraph)
 
 def openCsv():
     # takes data from [FROM read data] and loads it into a pandas dataframe
@@ -88,4 +103,5 @@ def index():
 
 if __name__ == "__main__":    
     app.run(debug=True)
+
 

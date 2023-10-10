@@ -30,7 +30,19 @@
       <div class="tab-content" id="pills-tabContent">
           
         <div class="tab-pane fade show active" id="pills-home" role="tabpanel">
-            <h1>Welcome, {}</h1>
+          <form>
+            <div class="form-group">
+              <label for="selector">Choose a Hotel</label>
+                <select class="custom-select">
+                  {% for option in columnhead %}
+                    <option>{{ option }}</option>
+                  {% endfor%}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </form>
+          <br>
+            <h1>Welcome, ..{}</h1>
               <h3>Catergories of the accomodations</h3>
             <div>{{ pie_chart_div|safe }}</div>
               <h3>Average Rating of the accomodations</h3>
@@ -102,6 +114,8 @@
             <div>{{ pie_chart_div2|safe }}</div>
             <h3>Average Rating of the accomodations</h3>
             <div>{{ histogram_div2|safe }}</div>
+            <h3>Correlation of Compound Sentiment</h3>
+            <div>{{ correlationgraph|safe}}</div>
 
             <table id='all_data_table' class="display">
               <thead>
