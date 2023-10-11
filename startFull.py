@@ -1,4 +1,4 @@
-import dataClean,dataStandardization,dataAnalyze
+import dataClean,dataStandardization,dataAnalyze,timeAnalyze
 import time,traceback,globalVar,os,datetime
 
 def fullFlow():
@@ -18,6 +18,7 @@ def fullFlow():
     dataClean.dataCleaner(cdfin,cout)
     dataStandardization.handleMissingData(mdin,mdout)
     dataAnalyze.dataAnalysis(ain,arout,ahout,getCorrelations)
+    timeAnalyze.timeAnalysis()
     eTime = time.time() 
 
     runtime = eTime - sTime

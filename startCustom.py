@@ -1,28 +1,6 @@
 import dataClean,dataStandardization,dataAnalyze
 import time,traceback,globalVar,os,datetime
 
-# def fullFlow():
-#     cin = globalVar.CLEANERINPUTFULLFILE
-#     cdfin = globalVar.CLEANERCUSTOMFULLFILE
-#     cout = globalVar.CLEANEROUTPUTFULLFILE
-#     mdin = globalVar.MDINPUTFULLFILE
-#     mdout = globalVar.MDOUTPUTFULLFILE
-#     ain = globalVar.ANALYSISINPUTFULLFILE
-#     arout = globalVar.ANALYSISREVIEWOUTPUTFULLFILE
-#     ahout = globalVar.ANALYSISHOTELOUTPUTFULLFILE
-#     sTime = time.time() 
-#     dataScrape.dataScraper()
-#     dataClean.dataCleaner(cin,cout)
-#     dataClean.dataCleaner(cdfin,cout)
-#     dataStandardization.handleMissingData(mdin,mdout)
-#     dataAnalyze.dataAnalysis(ain,arout,ahout)
-#     eTime = time.time() 
-
-#     runtime = eTime - sTime
-#     print(f"======= Runtime Information =======")
-#     print(f"Runtime: {runtime} seconds")
-#     print(f"===================================")
-
 def customFileMain():
     sTime = time.time()
     currentdate = datetime.date.today().strftime("%d-%b")
