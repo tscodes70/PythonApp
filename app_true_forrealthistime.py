@@ -121,16 +121,14 @@ def navigation():
     wordcloud.generate(text)
 
     # Render the word cloud as a base64-encoded image
-    wordcloud = WordCloud(width=800, height=400)
-    wordcloud.generate(wordcloud_data)
+    img_buffer = BytesIO()
     plt.figure(figsize=(8, 4))
     plt.imshow(wordcloud, interpolation='bilinear')
-    img_buffer = BytesIO()
     plt.axis('off')
     plt.savefig(img_buffer, format='png')
-    img_buffer.seek(0)
     img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
 
+    
     # Perform rank correlation analysis (e.g., Spearman's rank correlation)
     # Replace 'column1' and 'column2' with the columns you want to analyze
     correlation_value = df[globalVar.COMPOUND_SENTIMENT_SCORE].corr(df[globalVar.AVERAGE_RATING], method='spearman')
