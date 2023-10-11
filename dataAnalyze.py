@@ -215,8 +215,10 @@ def initiateAnalysis(data:pd.DataFrame, OUTPUTREVIEWFULLFILE,OUTPUTHOTELFULLFILE
     hProcessedData[globalVar.AVERAGE_RATING] = hProcessedData[globalVar.AVERAGE_RATING].round(2)
     hProcessedData[globalVar.REVIEWS_TOTAL] = hProcessedData[globalVar.REVIEWS_TEXT].apply(lambda x: int(len(x.split('<SPLIT> '))))
     hProcessedData[globalVar.REVIEWS_LENGTH] = hProcessedData[globalVar.REVIEWS_TEXT].apply(lambda x: int(len(' '.join(x.split('<SPLIT> ')))))
-    hProcessedData[globalVar.ANALYSISOUTPUTHEADER].to_csv(OUTPUTHOTELFULLFILE)
+    hProcessedData[globalVar.REVIEWS_TOTAL] = pd.to_numeric(hProcessedData[globalVar.REVIEWS_TOTAL], errors='coerce')
+    hProcessedData = hProcessedData[hProcessedData[globalVar.REVIEWS_TOTAL] > 5]
 
+    hProcessedData[globalVar.ANALYSISOUTPUTHEADER].to_csv(OUTPUTHOTELFULLFILE)
     return gProcessedData,hProcessedData
 
 def averageRatingCorrelation(processedData:pd.DataFrame):
@@ -332,17 +334,20 @@ def dataAnalysis(INPUTFULLFILE,OUTPUTREVIEWFULLFILE,OUTPUTHOTELFULLFILE,GETCORRE
 
     if GETCORRELATIONS:
         totalCorrelations = {}
+
         # Correlation analysis
+        provinceCorr = provinceCorrelation(gProcessedData)
+        amenitiesCorr = amenitiesCorrelation(gProcessedData)
         totalCorrelations[globalVar.AVERAGE_RATING] = averageRatingCorrelation(hProcessedData)
         totalCorrelations[globalVar.AVERAGE_REVIEWS_LENGTH] = averageReviewLengthCorrelation(hProcessedData)
         totalCorrelations[globalVar.PRICES] = priceCorrelation(gProcessedData)
-        totalCorrelations[globalVar.PROVINCE] = provinceCorrelation(gProcessedData).mean()
-        totalCorrelations[globalVar.AMENITIES] = amenitiesCorrelation(gProcessedData).mean()
-        # totalCorrelations.update(provinceCorrelation(gProcessedData).to_dict())
-        # totalCorrelations.update(amenitiesCorrelation(gProcessedData).to_dict())
+        totalCorrelations[globalVar.PROVINCE] = provinceCorr.mean()
+        totalCorrelations[globalVar.AMENITIES] = amenitiesCorr.mean()
+        totalCorrelations.update(provinceCorr.to_dict())
+        totalCorrelations.update(amenitiesCorr.to_dict())
         sortedTotalCorrelations= dict(sorted(totalCorrelations.items(), key=lambda item: item[1], reverse=True))
-        sortedTotalCorrelationsDf = pd.DataFrame(list(sortedTotalCorrelations.items()), columns=['Variables', 'Correlation Coefficient'])
-        sortedTotalCorrelationsDf.to_csv(globalVar.CORRFULLFILE)
+        sortedTotalCorrelationsDf = pd.DataFrame(list(sortedTotalCorrelations.items()), columns=[globalVar.CORRVARIABLE, globalVar.CORRCOEFFICIENT])
+        sortedTotalCorrelationsDf.to_csv(globalVar.CORRFULLFILE, index=False)
         #Series
         # provinceCorrelation(gProcessedData)
         # amenitiesCorrelation(gProcessedData)
@@ -369,3 +374,13 @@ def dataAnalysis(INPUTFULLFILE,OUTPUTREVIEWFULLFILE,OUTPUTHOTELFULLFILE,GETCORRE
 
 # except:
 #     traceback.print_exc() 
+# cin = globalVar.CLEANERINPUTFULLFILE
+# cdfin = globalVar.CLEANERCUSTOMFULLFILE
+# cout = globalVar.CLEANEROUTPUTFULLFILE
+# mdin = globalVar.MDINPUTFULLFILE
+# mdout = globalVar.MDOUTPUTFULLFILE
+# ain = globalVar.ANALYSISINPUTFULLFILE
+# arout = globalVar.ANALYSISREVIEWOUTPUTFULLFILE
+# ahout = globalVar.ANALYSISHOTELOUTPUTFULLFILE
+# getCorrelations = True
+# dataAnalysis(ain,arout,ahout,getCorrelations)
