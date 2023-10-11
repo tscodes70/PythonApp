@@ -42,7 +42,60 @@
             <button type="submit" class="btn btn-primary">Submit</button>
           </form>
           <br>
-            <h1>Welcome, {{ hotelName }}</h1>
+            <!-- hotel info to be displayed ONLY if selected-->
+            <div id="hotel_info" style="display:none;">
+              <div class="row">
+                <div class="col-4">
+                  <div class="list-group" id="list-tab" role="tablist">
+                    <a class="list-group-item list-group-item-action active" id="list-home-list" data-toggle="list" href="#hotel_name" role="tab" aria-controls="home">Name</a>
+                    <a class="list-group-item list-group-item-action" id="list-profile-list" data-toggle="list" href="#hotel_location" role="tab" aria-controls="profile">Location</a>
+                    <a class="list-group-item list-group-item-action" id="list-messages-list" data-toggle="list" href="#hotel_ratings" role="tab" aria-controls="messages">Ratings</a>
+                    <a class="list-group-item list-group-item-action" id="list-settings-list" data-toggle="list" href="#hotel_reviews" role="tab" aria-controls="settings">Review Summary</a>
+                  </div>
+                </div>
+                <div class="col-8">
+                  <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" role="tabpanel" aria-labelledby="list-home-list" id="hotel_name">
+                      {% if hotel_details %}
+                      {{ hotel_details [0][0] }}
+                      {% endif %}
+                    </div>
+                    <div class="tab-pane fade" role="tabpanel" aria-labelledby="list-profile-list" id="hotel_location">
+                      {% if hotel_details %}
+                      Province: {{ hotel_details[0][1] }}<br>
+                      Postal Code: {{ hotel_details[0][2] }}
+                      {% endif %}
+                    </div>
+                    <div class="tab-pane fade" role="tabpanel" aria-labelledby="list-messages-list" id="hotel_ratings">
+                      {% if hotel_details %}
+                      Number of Reviwes: {{ hotel_details[0][7] }}<br>
+                      Average Rating: {{ hotel_details[0][9] }}<br> 
+                      Compound Sentiment: {{ hotel_details[0][5] }}
+                      {% endif %}
+                    </div>
+                    <div class="tab-pane fade" role="tabpanel" aria-labelledby="list-settings-list" id="hotel_reviews">
+                      {% if hotel_details %}
+                      {{ hotel_details[0][6] }}
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <br>
+            <!-- script for display-->
+            <script>
+              $(document).ready(function () {
+                var hotel_details = {{ hotel_details|safe }};
+
+                if (hotel_details.length > 0) {
+                  $('#hotel_info').show()
+                } else {
+                  $('#hotel_info').hide()
+                }
+              });
+            </script>
+
               <h3>Map of Hotels in USA against the number of ratings</h3>
             <div>{{ map_div | safe }}</div><br>
             <h3>{{ wordcloud_heading }}</h3>  

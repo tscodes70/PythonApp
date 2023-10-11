@@ -32,7 +32,7 @@ TLFILEFULL = os.path.join(globalVar.CWD,rf'{tlfolder}\tl_2022_us_state.shp')
 gdf = gpd.read_file(TLFILEFULL)
 
 
-def categoryPiechart():
+def category_piechart():
     # Assuming the CSV has a 'Category' column, get the top 4 values
     top_categories = df['categories'].value_counts().nlargest(4)
     # Create the Plotly pie chart
@@ -42,14 +42,14 @@ def categoryPiechart():
 
     return pie_chart_div
 
+def get_hotel_details(s):
+    filter = df[df['name'] == s]
+    return (filter.values).tolist()
+
 @app.route('/filtered_charts', methods=['GET','POST'])
 def filtered_charts():
-    pie_chart_div = categoryPiechart()
+    pie_chart_div = category_piechart()
     selected_hotel = request.form['hotelName-dropdown']
-    
-    # set selected_hotel to 'All' for presentation
-    if not selected_hotel:
-        selected_hotel = 'All hotels'
 
     # histogram
     #if selected_hotel:
@@ -89,14 +89,24 @@ def filtered_charts():
     img_buffer.seek(0)
     img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
 
+    hotel_details = []
+    #get hotel values for display
+    if selected_hotel:
+        hotel_details = get_hotel_details(selected_hotel)
+
+    # set selected_hotel to 'All' for presentation
+    if not selected_hotel:
+        selected_hotel = 'All hotels'
+
     return render_template('userDashboard copy.html', img_data=img_data, hotelNames= hotel_name, 
                            histogram_heading=histogram_heading,wordcloud_heading=wordcloud_heading, 
-                           histogram_div=histogram_div, hotelName=selected_hotel, pie_chart_div=pie_chart_div)
+                           histogram_div=histogram_div, hotelName=selected_hotel, pie_chart_div=pie_chart_div,
+                           hotel_details=hotel_details)
 
 
 @app.route('/', methods=['GET', 'POST'])
 def navigation():
-    pie_chart_div = categoryPiechart()
+    pie_chart_div = category_piechart()
     #map_div = map()
     histogram_heading = "Histogram"
     wordcloud_heading = "Word Cloud"
@@ -160,4 +170,3 @@ def index():
    
 if __name__ == "__main__":    
     app.run(debug=True)
-
