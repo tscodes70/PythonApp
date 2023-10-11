@@ -4,20 +4,45 @@
 {% block head %}
 <head>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css" />
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
 </head>
 {% endblock %}
 
 {% block body %}
-<div class="container">
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="btn btn-primary" href="/dashboard" role="button">Return</a>
-</nav>
-<table id='analysed_data' class="display">
-    <thead>
-      <tr>
+<div class="container-fluid">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <a class="btn btn-primary" href="/" role="button">Return</a>
+  </nav>
+  <br>
+  <table id='analysed_data' class="display">
+      <thead>
+        <tr>
+          <th>Hotel Name</th>
+          <th>Province</th>
+          <th>Postal Code</th>
+          <th>Categories</th>
+          <th>Primary Categories</th>
+          <th>Compound Sentiment</th>
+          <th>Review Summary</th>
+          <th>Total Reviews</th>
+          <th>Popular Keywords</th>
+          <th>Average Rating</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+      <tfoot>
         <th>Hotel Name</th>
         <th>Province</th>
         <th>Postal Code</th>
@@ -28,47 +53,37 @@
         <th>Total Reviews</th>
         <th>Popular Keywords</th>
         <th>Average Rating</th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-    <tfoot>
-      <th>Hotel Name</th>
-      <th>Province</th>
-      <th>Postal Code</th>
-      <th>Categories</th>
-      <th>Primary Categories</th>
-      <th>Compound Sentiment</th>
-      <th>Review Summary</th>
-      <th>Total Reviews</th>
-      <th>Popular Keywords</th>
-      <th>Average Rating</th>
-    </tfoot>
-  </table>
-  <br>
-  <script>
-      $(document).ready( function () {
-          $('#analysed_data').DataTable( {
-              search: {
-              return: true
-              },
-              ajax:{
-                  url:'/api/general',
-              },
-              columns: [
-                  {data: 'name'},
-                  {data: 'province'},
-                  {data: 'postalCode'},
-                  {data: 'categories'},
-                  {data: 'primaryCategories'},
-                  {data: 'Compound Sentiment'},
-                  {data: 'reviews_summary'},
-                  {data: 'reviews_total'},
-                  {data: 'popular_keywords'},
-                  {data: 'average_rating'}
-              ]
-          });
-      });
-  </script>
+      </tfoot>
+    </table>
+    <br>
+    <script>
+        $(document).ready( function () {
+            $('#analysed_data').DataTable( {
+                search: {
+                return: true
+                },
+                ajax:{
+                    url:'/api/general',
+                },
+                autoWidth:false,
+                columns: [
+                    {data: 'name'},
+                    {data: 'province'},
+                    {data: 'postalCode'},
+                    {data: 'categories'},
+                    {data: 'primaryCategories'},
+                    {data: 'Compound Sentiment'},
+                    {data: 'reviews_summary'},
+                    {data: 'reviews_total'},
+                    {data: 'popular_keywords'},
+                    {data: 'average_rating'}
+                ],
+                dom: 'Bfrtip',
+                buttons: [
+                  'csv', 'excel'
+                ]
+            });
+        });
+    </script>
 </div>
 {% endblock %}  
