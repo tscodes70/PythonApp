@@ -74,11 +74,11 @@ def getSummary(topConcatReview:str) -> str:
 def analyzeIndividualReviews(processedData:pd.DataFrame) -> pd.DataFrame:
     """
     Analyzes individual reviews using VADER Sentiment Analysis then
-    1. Summarizes top 4 hotel reviews.
+    1. Summarizes top 2 hotel reviews.
     2. Retrieves top 10 Keywords of hotel reviews
 
     This function performs a analysis of individual hotel reviews by 
-    calling the 'getSummary' function to summarize the top 4 hotel reviews and 
+    calling the 'getSummary' function to summarize the top 2 hotel reviews and 
     calling the 'getKeywords' function to extract top 10 keywords of reviews. 
     Finally, both of these data are added into the intial Dataframe
 
@@ -341,12 +341,14 @@ def dataAnalysis(INPUTFULLFILE,OUTPUTREVIEWFULLFILE,OUTPUTHOTELFULLFILE,GETCORRE
         # totalCorrelations.update(provinceCorrelation(gProcessedData).to_dict())
         # totalCorrelations.update(amenitiesCorrelation(gProcessedData).to_dict())
         sortedTotalCorrelations= dict(sorted(totalCorrelations.items(), key=lambda item: item[1], reverse=True))
-
+        sortedTotalCorrelationsDf = pd.DataFrame(list(sortedTotalCorrelations.items()), columns=['Variables', 'Correlation Coefficient'])
+        sortedTotalCorrelationsDf.to_csv(globalVar.CORRFULLFILE)
         #Series
         # provinceCorrelation(gProcessedData)
         # amenitiesCorrelation(gProcessedData)
-        weight = getWeights(sortedTotalCorrelations)
-        predictSentiment(weight)
+
+        # weight = getWeights(sortedTotalCorrelations)
+        # predictSentiment(weight)
 
 
     # 
