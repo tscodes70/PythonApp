@@ -161,14 +161,24 @@
           </div>
 
           <div class="tab-pane fade" id="pills-profile" role="tabpanel">
-            
-            <h1>General Overview</h1>
-            <h3>Catergories of the accomodations</h3>
-            <div>{{ pie_chart_div|safe }}</div>
-            <h3>Average Rating of the accomodations</h3>
-            <div>{{ histogram_div|safe }}</div>
-            <h3>Correlation of Compound Sentiment</h3>
+          <h1>General Overview</h1>
+          <div class="row">
+            <div class="col">
+              <h3>Catergories of the accomodations</h3>
+              <div>{{ pie_chart_div|safe }}</div>
+            </div>
+            <div class="col">
+              <h3>Average Rating of the accomodations</h3>
+              <div>{{ histogram_div|safe }}</div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+            <h3>Correlation of Compound Sentiment to Average Rating</h3>
             <div>{{ scattermap|safe }}</div>
+            </div>
+          </div>
+          <div class="row">  
             <h3>Other Hotel Information</h3>
             <table id='all_data_table' class="display">
               <thead>
@@ -200,6 +210,7 @@
                 <th>Average Rating</th>
               </tfoot>
             </table>
+          </div>
             <br>
             <script>
                 $(document).ready( function () {
