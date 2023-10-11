@@ -81,10 +81,10 @@ df['season'] = df['reviews.date'].apply(get_season)
 
 # Assuming you have a column 'Season' indicating the season for each review
 # Modify this condition based on your dataset structure
-#df['is_winter'] = df['season'].apply(lambda x: 1 if x == 'Winter' else 0)
+df['is_winter'] = df['season'].apply(lambda x: 1 if x == 'Winter' else 0)
 df['is_spring'] = df['season'].apply(lambda x: 1 if x == 'Spring' else 0)
-#df['is_summer'] = df['season'].apply(lambda x: 1 if x == 'Summer' else 0)
-#df['is_autumn'] = df['season'].apply(lambda x: 1 if x == 'Autumn' else 0)
+df['is_summer'] = df['season'].apply(lambda x: 1 if x == 'Summer' else 0)
+df['is_autumn'] = df['season'].apply(lambda x: 1 if x == 'Autumn' else 0)
 
 
 # Group by hotel and calculate correlation for each hotel
