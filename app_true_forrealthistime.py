@@ -50,6 +50,12 @@ def scatterplot():
     scattermap = px.scatter(df, x=globalVar.AVERAGE_RATING, y=globalVar.COMPOUND_SENTIMENT_SCORE)
     return scattermap.to_html()
 
+def bargraph():
+    count_province = df.groupby([globalVar.PROVINCE]).size().reset_index(name='Number of Hotels')
+    provinces = px.bar(count_province, x='province', y='Number of Hotels')
+    return provinces.to_html()
+
+bargraph()
 @app.route('/filtered_charts', methods=['GET','POST'])
 def filtered_charts():
     pie_chart_div = category_piechart()
@@ -101,12 +107,14 @@ def filtered_charts():
     # set selected_hotel to 'All' for presentation
     if not selected_hotel:
         selected_hotel = 'All hotels'
+    
+    scattermap = scatterplot()
+    provinces = bargraph()
 
     return render_template('userDashboard copy.html', img_data=img_data, hotelNames= hotel_name, 
                            histogram_heading=histogram_heading,wordcloud_heading=wordcloud_heading, 
                            histogram_div=histogram_div, hotelName=selected_hotel, pie_chart_div=pie_chart_div,
-                           hotel_details=hotel_details)
-
+                           hotel_details=hotel_details, scattermap=scattermap, provinces=provinces)
 
 @app.route('/', methods=['GET', 'POST'])
 def navigation():
@@ -143,10 +151,12 @@ def navigation():
     img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
 
     scattermap = scatterplot()
+    provinces = bargraph()
 
     return render_template('userDashboard copy.html',  histogram_heading=histogram_heading, histogram_div=histogram_div, 
                            wordcloud_heading = wordcloud_heading, hotelNames=hotel_name, 
-                           pie_chart_div=pie_chart_div, scattermap=scattermap, img_data=img_data)
+                           pie_chart_div=pie_chart_div, scattermap=scattermap, img_data=img_data,
+                           provinces=provinces)
 
 @app.route('/api/general')
 def summary():
@@ -160,4 +170,4 @@ def index():
     return render_template("viewSummary.html", title="View Summary")
    
 if __name__ == "__main__":    
-    app.run(debug=True)
+  app.run(debug=True)
