@@ -238,11 +238,12 @@
               <!-- Hotel x piechart-->
               <div class="col">
                 hotel x
+                <div>{{ specific_sentiment_piechart|safe }}</div>
               </div>
               <!-- All piechart-->
               <div class="col">
                 All hotels
-                <img src="data:image/png;base64,{{ img_data }}" alt="Word Cloud">
+                <div>{{ all_sentiment_piechart|safe }}</div>
               </div>
             </div>
             <!-- Piechart insights-->
@@ -280,11 +281,12 @@
               <!-- Hotel x wordcloud -->
               <div class="col">
                 hotel x
+                <img src="data:image/png;base64,{{ specific_wordcloud }}" alt="Word Cloud">
               </div>
               <!-- All wordcloud -->
               <div class="col">
                 All hotels
-                <img src="data:image/png;base64,{{ img_data }}" alt="Word Cloud">
+                <img src="data:image/png;base64,{{ all_wordcloud }}" alt="Word Cloud">
               </div>
             </div>
             <!-- Wordcloud insights -->

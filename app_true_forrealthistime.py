@@ -17,7 +17,7 @@ import contextily as ctx
 import geopandas as gpd 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import geopandas as gpd
-import globalVar
+import globalVar,ast
 
 app = Flask(__name__)
 Bootstrap(app)
@@ -35,7 +35,6 @@ df = pd.read_csv(fileread, index_col=0)
 tlfolder = "tl_2022_us_state"
 TLFILEFULL = os.path.join(globalVar.CWD,rf'{tlfolder}\tl_2022_us_state.shp')
 gdf = gpd.read_file(TLFILEFULL)
-
 
 def category_piechart():
     # Assuming the CSV has a 'Category' column, get the top 4 values
@@ -143,23 +142,62 @@ def filtered_charts():
     scattermap = scatterplot()
     provinces = bargraph()
 
-    return render_template('userDashboard copy 2.html', img_data=img_data, hotelNames= hotel_name, 
+    return render_template('userDashboard copy.html', img_data=img_data, hotelNames= hotel_name, 
                            histogram_heading=histogram_heading,wordcloud_heading=wordcloud_heading, 
                            histogram_div=histogram_div, hotelName=selected_hotel, pie_chart_div=pie_chart_div,
                            hotel_details=hotel_details, scattermap=scattermap, provinces=provinces)
+
+# Charts
+def sentimentPieChart(csvFile):
+    df = pd.read_csv(csvFile)
+    df[globalVar.COMPOUND_SENTIMENT_SCORE] = pd.to_numeric(df[globalVar.COMPOUND_SENTIMENT_SCORE])
+    positiveSent = (df[globalVar.COMPOUND_SENTIMENT_SCORE] > 0).sum()
+    negativeSent = (df[globalVar.COMPOUND_SENTIMENT_SCORE] < 0).sum()
+    neutralSent = (df[globalVar.COMPOUND_SENTIMENT_SCORE] == 0).sum()
+    pcLabels = ["Positive Sentiment", "Negative Sentiment", "Neutral Sentiment"]
+    valList = [positiveSent,negativeSent,neutralSent]
+
+    # Create the Plotly pie chart
+    spc = go.Figure(data=[go.Pie(labels=pcLabels, values=valList)])
+    # Convert the chart to an HTML div
+    sentiment_piechart = spc.to_html(full_html=False)
+    return sentiment_piechart
+
+def wordCloud(csvFile):
+    df = pd.read_csv(csvFile)
+    keywords = df[globalVar.POPULAR_KEYWORDS].tolist()
+    word_freq = {}
+    for item in keywords:
+        word_list = ast.literal_eval(item)  # Convert the string to a list of tuples
+        for word, freq in word_list:
+            if word in word_freq:
+                word_freq[word] += int(freq)  # Convert freq to int and add to existing count
+            else:
+                word_freq[word] = int(freq)
+
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_freq)
+    plt.figure(figsize=(8, 4))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    img_buffer = BytesIO()
+    plt.axis('off')
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    wordcloud = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+    return wordcloud
+
 
 @app.route('/dashboard', methods=['GET', 'POST'])
 def navigation():
     # Home page will render info related to a singular hotel : hotel info, word map for single hotel, etc
     # General overview will return all info related to all hotels : selected hotel info, word map (can be selected), graphs, table
-    
+
     # home
     # read file name from session
     hotel_df = pd.read_csv(session['uploaded_data_file_path'], index_col=0)
     # read this in main home 
     main_hotel_details = hotel_df.values.tolist()
     # make a word cloud specific to file session hotel
-    t = ' '.join(hotel_df['reviews.summary'].astype(str))
+    t = ' '.join(hotel_df[globalVar.GREVIEWS_SUMMARY].astype(str))
     wordcloud = WordCloud(width=800, height=400)
     wordcloud.generate(t)
     img_buffer = BytesIO()
@@ -179,6 +217,13 @@ def navigation():
     wcComparisonHeader = "Word Cloud Comparison"
     rrComparisonHeader = "Review Rating Comparison"
     amComparisonHeader = "Amenities Comparison"
+
+    # Comparisons Charts
+    all_sentiment_piechart = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
+    specific_sentiment_piechart = sentimentPieChart(session['analyzed_reviews'])
+
+    all_wordcloud = wordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+    specific_wordcloud = wordCloud(session['analyzed_hotels'])
 
     hotel_name = df['name'].unique()
     
@@ -219,10 +264,15 @@ def navigation():
                            scattermap=scattermap, 
                            img_data=img_data,
                            provinces=provinces, 
+
+                           all_sentiment_piechart = all_sentiment_piechart,
+                           specific_sentiment_piechart = specific_sentiment_piechart,
+                           all_wordcloud = all_wordcloud,
+                           specific_wordcloud = specific_wordcloud,
                            pcComparisonHeader = pcComparisonHeader, 
                            rrComparisonHeader = rrComparisonHeader, 
                            wcComparisonHeader = wcComparisonHeader,
-                           amComparisonHeader = amComparisonHeader
+                           amComparisonHeader = amComparisonHeader,
                            main_hotel_details=main_hotel_details,
                            map_div=map_div)
 
@@ -240,9 +290,15 @@ def upload():
         #save the stuff and redirect to dashboard and save the file path to session for reading
         session['uploaded_data_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'],
 					filename)
+        
         # 1) user will upload their own related hotel csv
         # 2) csv will get cleaned, analyzed and home page will read wtv yall need from examplehotelname_analyzedreviews_12-Oct.csv and examplehotelname_analyzedhotels_12-Oct.csv
         # insert cleaning and analysis here
+
+        
+        #Session stuff 
+        session['analyzed_hotels'] = os.path.join(app.config['UPLOAD_FOLDER'],"yotel_analyzedhotels_12-Oct.csv")
+        session['analyzed_reviews'] = os.path.join(app.config['UPLOAD_FOLDER'],"yotel_analyzedreviews_12-Oct.csv")
         return redirect('/dashboard')
 
     return render_template("new_upload.html")
