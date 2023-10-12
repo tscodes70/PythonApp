@@ -20,13 +20,13 @@
 {% endblock %}
 
 {% block body %}
-<form method="POST" action="{{ url_for('filtered_charts') }}">
+<form method="POST" action="{{ url_for('generalPage') }}">
   <div class="form-group">
     <label for="hotelName-dropdown">Choose a Hotel</label>
       <select class="custom-select" id="hotelName-dropdown" name="hotelName-dropdown">
           <option value="">All</option>
-        {% for hotelName in hotelNames %}
-          <option value="{{ hotelName }}">{{ hotelName }}</option>
+        {% for name in hotel_name %}
+          <option value="{{ name }}">{{ name }}</option>
         {% endfor%}
       </select>
   </div>
@@ -50,7 +50,7 @@
 </div>
 <div class="row">
   <div class="col">
-    <h3>Wordcloud</h3>
+    <h3>Wordcloud {{ selected_hotel }}</h3>
     <img src="data:image/png;base64,{{ all_keywords_wordcloud }}" alt="Word Cloud">
   </div>
 

@@ -236,6 +236,12 @@ def summary():
      jsonfile = dfc.to_json(orient='table')
      return jsonfile
 
+def sentimentOverTime(csvFile):
+    df = pd.read_csv(csvFile)
+    df = df.sort_values(by=globalVar.REVIEWS_DATE)
+    fig = go.Figure([go.Scatter(x=df[globalVar.REVIEWS_DATE], y=df[globalVar.COMPOUND_SENTIMENT_SCORE])])
+    return fig.to_html()
+
 @app.route('/home', methods=("POST", "GET"))
 def homePage():
     hotel_df = pd.read_csv(session['analyzed_hotels'], index_col=0)
@@ -244,21 +250,25 @@ def homePage():
     rrHeader = "Review Rating"
     wcHeader = "Word Cloud"
     amHeader = "Amenities"
+    dtHeader = "Sentiment Over Time"
     accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
     specific_sentiment_piechart = sentimentPieChart(session['analyzed_reviews'])
     specific_keywords_wordcloud = keywordsWordCloud(session['analyzed_hotels'])
     specific_averagerating_histogram = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
+    sentiment_over_time_graph = sentimentOverTime(session['analyzed_reviews'])
 
     return render_template("home.html",
                            pcHeader=pcHeader,
                            rrHeader=rrHeader, 
                            wcHeader=wcHeader,
                            amHeader=amHeader,
+                           dtHeader=dtHeader,
                            accomo_piechart = accomo_piechart,
                            specific_sentiment_piechart = specific_sentiment_piechart,
                            specific_keywords_wordcloud = specific_keywords_wordcloud,
                            specific_averagerating_histogram = specific_averagerating_histogram,
-                           main_hotel_details=main_hotel_details)
+                           main_hotel_details=main_hotel_details,
+                           sentiment_over_time_graph = sentiment_over_time_graph)
 
 @app.route('/comparison', methods=("POST", "GET"))
 def comparisonPage():
@@ -315,9 +325,47 @@ def comparisonPage():
                            main_hotel_details=main_hotel_details,
                            map_div=map_div)
 
+def keywordsWordCloudSpecific(csvFile, selector):
+    df = pd.read_csv(csvFile)
+    wordcloud_filtered_data = df[df['name'] == selector].copy()
+    # wordcloud_data = ' '.join(wordcloud_filtered_data[globalVar.POPULAR_KEYWORDS].astype(str))
+    keywords = wordcloud_filtered_data[globalVar.POPULAR_KEYWORDS].tolist()
+    # wordcloud = WordCloud(width=800, height=400, background_color='white')
+    # wordcloud.generate(wordcloud_data)
+    word_freq = {}
+    for item in keywords:
+         word_list = ast.literal_eval(item)  # Convert the string to a list of tuples
+         for word, freq in word_list:
+             if word in word_freq:
+                 word_freq[word] += int(freq)  # Convert freq to int and add to existing count
+             else:
+                 word_freq[word] = int(freq)
+
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_freq)
+    plt.figure(figsize=(8, 4))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    img_buffer = BytesIO()
+    plt.axis('off')
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    wordcloud = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+    return wordcloud
+
 @app.route('/general', methods=("POST", "GET"))
 def generalPage():
-    hotel_df = pd.read_csv(session['analyzed_hotels'], index_col=0)
+    # check if theres a POST request from dropdown list
+    hotel_name = df['name'].unique()
+    if request.method == 'POST':
+        selected_hotel = request.form['hotelName-dropdown']
+        
+        if selected_hotel:
+            all_keywords_wordcloud = keywordsWordCloudSpecific(globalVar.ANALYSISHOTELOUTPUTFULLFILE, selected_hotel)
+        else:
+            all_keywords_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+    else:
+        selected_hotel = ''
+        all_keywords_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+        
     map_div = map()
     scattermap = scatterplot()
     provinces = provinceHistogram()
@@ -329,10 +377,12 @@ def generalPage():
     amHeader = "Amenities"
 
     all_sentiment_piechart = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
-    all_keywords_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+    #all_keywords_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
     all_averagerating_histogram = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.AVERAGE_RATING)
 
     return render_template("general.html",
+                           hotel_name=hotel_name,
+                           selected_hotel=selected_hotel,
                            pcHeader=pcHeader,
                            rrHeader=rrHeader, 
                            wcHeader=wcHeader,
