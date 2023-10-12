@@ -44,9 +44,11 @@ def get_hotel_details(s):
 def sentimentPieChart(csvFile):
     df = pd.read_csv(csvFile)
     df[globalVar.COMPOUND_SENTIMENT_SCORE] = pd.to_numeric(df[globalVar.COMPOUND_SENTIMENT_SCORE])
+
     positiveSent = (df[globalVar.COMPOUND_SENTIMENT_SCORE] > 0).sum()
     negativeSent = (df[globalVar.COMPOUND_SENTIMENT_SCORE] < 0).sum()
     neutralSent = (df[globalVar.COMPOUND_SENTIMENT_SCORE] == 0).sum()
+    totalSent = positiveSent + negativeSent + neutralSent
     pcLabels = ["Positive Sentiment", "Negative Sentiment", "Neutral Sentiment"]
     valList = [positiveSent,negativeSent,neutralSent]
 
@@ -54,7 +56,7 @@ def sentimentPieChart(csvFile):
     spc = go.Figure(data=[go.Pie(labels=pcLabels, values=valList)])
     # Convert the chart to an HTML div
     sentiment_piechart = spc.to_html(full_html=False)
-    return sentiment_piechart
+    return sentiment_piechart,int(positiveSent),int(negativeSent),int(totalSent)
 
 def accomodationPieChart(csvFile):
     df = pd.read_csv(csvFile)
@@ -87,7 +89,7 @@ def keywordsWordCloud(csvFile):
     plt.savefig(img_buffer, format='png')
     img_buffer.seek(0)
     wordcloud = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
-    return wordcloud
+    return wordcloud,word_freq
 
 def averageRatingHistogram(csvFile,dfHeader):
     df = pd.read_csv(csvFile)
@@ -102,7 +104,7 @@ def averageRatingHistogram(csvFile,dfHeader):
         yaxis_title='Count'
     )
     rating_histogram = histogram.to_html()
-    return rating_histogram
+    return rating_histogram,histogram_data.mean()
 
 def scatterplot():
     scattermap = px.scatter(df, x=globalVar.AVERAGE_RATING, y=globalVar.COMPOUND_SENTIMENT_SCORE)
@@ -140,6 +142,83 @@ def map():
     # Convert the map to HTML
     map_div = fig.to_html(full_html=False)
     return map_div
+
+def getSentimentInsight(hotelname:str,specificList:list,allList:list):
+    background = ("Positive Sentiment: This category is used to describe customer reviews that express a favorable or optimistic attitude. It often indicates happiness, satisfaction, approval, or agreement.\n" +
+                  "Negative Sentiment: Negative sentiment represents customer reviews that convey a critical, unfavorable, or pessimistic attitude. It is typically associated with dissatisfaction, disapproval, or disagreement.\n" +
+                  "Neutral Sentiment: Neutral sentiment refers to customer reviews that do not express a strong positive or negative emotional tone. It often indicates a lack of strong emotion or a balanced viewpoint.")
+    result = ""
+    insight = ""
+    # Hotel more positive sentiment than average
+    if specificList[0]/specificList[2] > allList[0]/allList[2]:
+        result = (f"{hotelname} has more satisfied customers than the average hotel. It is likely that " +
+                  f"{hotelname} provides:\n" +
+                  "1. High Quality of Services\n" +
+                  "2. Competitve Pricing\n" + 
+                  "3. Special Features or Amenities")
+        insight = (f"{hotelname} performing better than the average hotel in terms of customer satisfaction, not much insight to be given for this comparison.")
+    # Hotel lesser positive sentiment than average
+    else:
+        result = (f"{hotelname} has lesser satisfied customers than the average hotel. It is likely that " +
+                  f"{hotelname} is lacking in:\n" +
+                  "1. High Quality of Services\n" +
+                  "2. Competitve Pricing\n" + 
+                  "3. Special Features or Amenities")
+        insight = (f"{hotelname} is underperforming compared to the average hotel in terms of customer satisfaction.\n" +
+                   f"Possible variables to look into:\n " +
+                    "1. Enhancing Customer Services \n" +
+                    "2. Increasing engagement with Customers\n" +
+                    "3. Maintaining Clean and Safe Enviroments\n" +
+                    "4. Staff Motivation and Training\n" +
+                    "5. Monitoring Online Reputation")
+    return background,result,insight
+
+def getReviewRatingInsight(hotelname:str,specific:float,all:float):
+    background = ("The average rating of hotel reviews is a numerical representation of the overall satisfaction or evaluation of a hotel based on multiple reviews. It is calculated by summing up the ratings or scores given by individual reviewers and dividing the total by the number of reviews.")
+    result = ""
+    insight = ""
+    # Hotel higher review rating than average
+    if specific > all:
+        result = (f"{hotelname} has a higher average rating than the average hotel. It is likely that " +
+                  f"{hotelname} provides:\n" +
+                  "1. Positive Guest Experience\n" +
+                  "2. Quality Service\n" + 
+                  "3. Good Value for Money")
+        insight = (f"{hotelname} performing better than the average hotel in terms of customer satisfaction, not much insight to be given for this comparison.")
+    # Hotel lower review rating than average
+    else:
+        result = (f"{hotelname} has a lower average rating than the average hotel. It is likely that " +
+                  f"{hotelname} is lacking in:\n" +
+                  "1. Positive Guest Experience\n" +
+                  "2. Quality Service\n" + 
+                  "3. Good Value for Money")
+        insight = (f"{hotelname} is underperforming compared to the average hotel in general.\n" +
+                   f"Possible variables to look into:\n " +
+                    "1. Enhancing Customer Services \n" +
+                    "2. Increasing engagement with Customers\n" +
+                    "3. Maintaining Clean and Safe Enviroments\n" +
+                    "4. Staff Motivation and Training\n" +
+                    "5. Monitoring Online Reputation")
+    return background,result,insight
+
+def getWordCloudInsight(hotelname:str,hotel_keywords:list,all_hotel_keywords:list):
+    background = ("A Wordcloud shows the most discussed topics of customers through their reviews")
+    result = ""
+    insight = ""
+    # Compare the hotel's keywords with all hotel keywords
+    common_keywords = set(hotel_keywords).intersection(all_hotel_keywords)
+    
+    if common_keywords:
+        result = f"The word cloud for {hotelname} includes common topics discussed in customer reviews. These topics may include:\n"
+        result += ",".join(common_keywords)
+        insight = (f"{hotelname} shares common discussion topics with other hotels, which is a positive sign as" + 
+                    " it is: \n" +
+                    "1. Meeting Industry Standards\n" +
+                    "2. Consistent with competitors")
+    else:
+        result = f"The word cloud for {hotelname} does not include common topics discussed in customer reviews. This may indicate unique aspects."
+        insight = f"{hotelname} may have unique features or aspects that are not commonly discussed in reviews."
+    return background,result,insight
 
 @app.route('/filtered_charts', methods=['GET','POST'])
 def filtered_charts():
@@ -245,7 +324,7 @@ def homePage():
     wcHeader = "Word Cloud"
     amHeader = "Amenities"
     accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
-    specific_sentiment_piechart = sentimentPieChart(session['analyzed_reviews'])
+    specific_sentiment_piechart,positiveSent,negativeSent,totalSent = sentimentPieChart(session['analyzed_reviews'])
     specific_keywords_wordcloud = keywordsWordCloud(session['analyzed_hotels'])
     specific_averagerating_histogram = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
 
@@ -263,6 +342,7 @@ def homePage():
 @app.route('/comparison', methods=("POST", "GET"))
 def comparisonPage():
     hotel_df = pd.read_csv(session['analyzed_hotels'], index_col=0)
+    hotelname = hotel_df[globalVar.NAME].to_string(index=False)
     map_div = map()
     scattermap = scatterplot()
     provinces = provinceHistogram()
@@ -282,24 +362,44 @@ def comparisonPage():
     amComparisonHeader = "Amenities Comparison"
 
     # Comparisons Charts
-    all_sentiment_piechart = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
-    specific_sentiment_piechart = sentimentPieChart(session['analyzed_reviews'])
+    all_sentiment_piechart,all_positiveSent,all_negativeSent,all_totalSent = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
+    specific_sentiment_piechart,specific_positiveSent,specific_negativeSent,specific_totalSent = sentimentPieChart(session['analyzed_reviews'])
+    sentbg,sentresult,sentinsight=getSentimentInsight(hotelname,[specific_positiveSent,specific_negativeSent,specific_totalSent],[all_positiveSent,all_negativeSent,all_totalSent])
+    sentbg = sentbg.replace('\n', '<br>')
+    sentresult = sentresult.replace('\n', '<br>')
+    sentinsight = sentinsight.replace('\n', '<br>')
 
-    all_keywords_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
-    specific_keywords_wordcloud = keywordsWordCloud(session['analyzed_hotels'])
+    all_keywords_wordcloud,all_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+    specific_keywords_wordcloud,specific_wordcloud = keywordsWordCloud(session['analyzed_hotels'])
+    wcbg,wcresult,wcinsight=getWordCloudInsight(hotelname,specific_wordcloud,all_wordcloud)
+    wcbg = wcbg.replace('\n', '<br>')
+    wcresult = wcresult.replace('\n', '<br>')
+    wcinsight = wcinsight.replace('\n', '<br>')
 
-    all_averagerating_histogram = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.AVERAGE_RATING)
-    specific_averagerating_histogram = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
+    all_averagerating_histogram,all_averageRating = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.AVERAGE_RATING)
+    specific_averagerating_histogram,specific_averageRating = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
 
-    hotel_name = df[globalVar.NAME].unique()
+    arbg,arresult,arinsight=getReviewRatingInsight(hotelname,specific_averageRating,all_averageRating)
+    arbg = arbg.replace('\n', '<br>')
+    arresult = arresult.replace('\n', '<br>')
+    arinsight = arinsight.replace('\n', '<br>')
 
     return render_template("comparison.html",
                            pcHeader=pcHeader,
                            rrHeader=rrHeader, 
                            wcHeader=wcHeader,
                            amHeader=amHeader,
+                           sentbg = sentbg,
+                           sentresult=sentresult,
+                           sentinsight=sentinsight,
+                           arbg=arbg,
+                           arresult=arresult,
+                           arinsight=arinsight,
+                           wcbg=wcbg,
+                           wcresult=wcresult,
+                           wcinsight=wcinsight,
                            accomo_piechart = accomo_piechart,
-                           hotelNames=hotel_name, 
+                           hotelname=hotelname, 
                            scattermap=scattermap, 
                            provinces=provinces, 
                            all_sentiment_piechart = all_sentiment_piechart,
@@ -328,7 +428,7 @@ def generalPage():
     wcHeader = "Word Cloud"
     amHeader = "Amenities"
 
-    all_sentiment_piechart = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
+    all_sentiment_piechart,positiveSent,negativeSent,totalSent = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
     all_keywords_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
     all_averagerating_histogram = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.AVERAGE_RATING)
 

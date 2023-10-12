@@ -6,7 +6,7 @@
 <div class="row">
   <!-- Hotel x piechart-->
   <div class="col">
-    hotel x
+    <p>{{hotelname}}</p>
     <div>{{ specific_sentiment_piechart|safe }}</div>
   </div>
   <!-- All piechart-->
@@ -18,17 +18,22 @@
 <!-- Piechart insights-->
 <div class="row">
   <div class="col">
-    Pie Chart compare
+    <h3>==Background==</h3>
+    <p>{{sentbg | safe}}</p>
+    <h3>==Results==</h3>
+    <p>{{sentresult | safe}}</p>
+    <h3>==Insights==</h3>
+    <p>{{sentinsight | safe}}</p>
   </div>
 </div>
 <!--end of piechart-->
-
+<br><br><br>
 <!-- Review Rating Bar Chart -->
 <h4>{{ rrComparisonHeader }}</h4>
 <div class="row">
   <!-- Hotel x rating of reviews -->
   <div class="col">
-    hotel x
+    <p>{{hotelname}}</p>
     <div>{{ specific_averagerating_histogram |safe }}</div>
   </div>
   <!-- All average review rating -->
@@ -40,7 +45,12 @@
 <!-- Review Rating insights -->
 <div class="row">
   <div class="col">
-    Review Rating compare
+    <h3>==Background==</h3>
+    <p>{{arbg | safe}}</p>
+    <h3>==Results==</h3>
+    <p>{{arresult | safe}}</p>
+    <h3>==Insights==</h3>
+    <p>{{arinsight | safe}}</p>
   </div>
 </div>
 <!--end of review rating-->
@@ -62,7 +72,12 @@
 <!-- Wordcloud insights -->
 <div class="row">
   <div class="col">
-    Word clouds are often used to quickly and intuitively visualize the most prominent words in a body of text, helping to identify key themes, terms, or patterns within the data.
+    <h3>==Background==</h3>
+    <p>{{wcbg | safe}}</p>
+    <h3>==Results==</h3>
+    <p>{{wcresult | safe}}</p>
+    <h3>==Insights==</h3>
+    <p>{{wcinsight | safe}}</p>
   </div>
 </div>
 <!--end of wordcloud-->
