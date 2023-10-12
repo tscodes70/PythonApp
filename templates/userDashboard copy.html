@@ -260,11 +260,12 @@
               <!-- Hotel x rating of reviews -->
               <div class="col">
                 hotel x
+                <div>{{ specific_averagerating_histogram |safe }}</div>
               </div>
               <!-- All average review rating -->
               <div class="col">
                 All hotels
-                <img src="data:image/png;base64,{{ img_data }}" alt="Word Cloud">
+                <div>{{ all_averagerating_histogram|safe }}</div>
               </div>
             </div>
             <!-- Review Rating insights -->
@@ -281,12 +282,12 @@
               <!-- Hotel x wordcloud -->
               <div class="col">
                 hotel x
-                <img src="data:image/png;base64,{{ specific_wordcloud }}" alt="Word Cloud">
+                <img src="data:image/png;base64,{{ specific_keywords_wordcloud }}" alt="Word Cloud">
               </div>
               <!-- All wordcloud -->
               <div class="col">
                 All hotels
-                <img src="data:image/png;base64,{{ all_wordcloud }}" alt="Word Cloud">
+                <img src="data:image/png;base64,{{ all_keywords_wordcloud }}" alt="Word Cloud">
               </div>
             </div>
             <!-- Wordcloud insights -->

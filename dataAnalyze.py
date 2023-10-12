@@ -202,7 +202,7 @@ def initiateAnalysis(data:pd.DataFrame, OUTPUTREVIEWFULLFILE,OUTPUTHOTELFULLFILE
     data[globalVar.COMPOUND_SENTIMENT_SCORE] = data[globalVar.SENTIMENT_SCORE].apply(lambda x: x['compound'])
     gProcessedData = data.copy()
     # Export individual review analysis
-    gProcessedData[[globalVar.NAME, globalVar.PROVINCE, globalVar.COUNTRY, globalVar.REVIEWS_DATE, globalVar.REVIEWS_TEXT, globalVar.COMPOUND_SENTIMENT_SCORE]].to_csv(OUTPUTREVIEWFULLFILE)
+    gProcessedData[[globalVar.NAME, globalVar.PROVINCE, globalVar.COUNTRY, globalVar.REVIEWS_DATE, globalVar.REVIEWS_TEXT, globalVar.REVIEWS_RATING, globalVar.COMPOUND_SENTIMENT_SCORE]].to_csv(OUTPUTREVIEWFULLFILE)
     
     # Export average compound analysis grouped by hotel
     hProcessedData = groupDataframe(gProcessedData.copy(),[globalVar.NAME, globalVar.PROVINCE, globalVar.POSTALCODE, globalVar.CATEGORIES, globalVar.PRIMARYCATEGORIES]).agg({

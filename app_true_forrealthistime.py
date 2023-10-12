@@ -147,6 +147,8 @@ def filtered_charts():
                            histogram_div=histogram_div, hotelName=selected_hotel, pie_chart_div=pie_chart_div,
                            hotel_details=hotel_details, scattermap=scattermap, provinces=provinces)
 
+#`````````````````````````````````````````Teemo```````````````````````````````
+
 # Charts
 def sentimentPieChart(csvFile):
     df = pd.read_csv(csvFile)
@@ -163,7 +165,7 @@ def sentimentPieChart(csvFile):
     sentiment_piechart = spc.to_html(full_html=False)
     return sentiment_piechart
 
-def wordCloud(csvFile):
+def keywordsWordCloud(csvFile):
     df = pd.read_csv(csvFile)
     keywords = df[globalVar.POPULAR_KEYWORDS].tolist()
     word_freq = {}
@@ -184,6 +186,23 @@ def wordCloud(csvFile):
     img_buffer.seek(0)
     wordcloud = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
     return wordcloud
+
+def averageRatingHistogram(csvFile,dfHeader):
+    df = pd.read_csv(csvFile)
+    histogram_data = df[dfHeader].astype(float)
+    histHeader = "Average Rating" if dfHeader == globalVar.AVERAGE_RATING else "Rating"
+
+    # Create a histogram figure using go.Figure
+    histogram = go.Figure(data=[go.Histogram(x=histogram_data)])
+    histogram.update_layout(
+        title=f'Histogram of {histHeader}',
+        xaxis_title= f"{histHeader}",
+        yaxis_title='Count'
+    )
+    rating_histogram = histogram.to_html()
+    return rating_histogram
+
+#````````````````````````````````````````````````````````````````````````
 
 
 @app.route('/dashboard', methods=['GET', 'POST'])
@@ -212,6 +231,7 @@ def navigation():
     histogram_heading = "Histogram"
     wordcloud_heading = "Word Cloud"
 
+#`````````````````````````````````````````Teemo```````````````````````````````
     # Comparisons
     pcComparisonHeader = "Pie Chart Comparison"
     wcComparisonHeader = "Word Cloud Comparison"
@@ -222,10 +242,15 @@ def navigation():
     all_sentiment_piechart = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
     specific_sentiment_piechart = sentimentPieChart(session['analyzed_reviews'])
 
-    all_wordcloud = wordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
-    specific_wordcloud = wordCloud(session['analyzed_hotels'])
+    all_keywords_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+    specific_keywords_wordcloud = keywordsWordCloud(session['analyzed_hotels'])
+
+    all_averagerating_histogram = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.AVERAGE_RATING)
+    specific_averagerating_histogram = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
 
     hotel_name = df['name'].unique()
+
+#````````````````````````````````````````````````````````````````````````
     
     # Create a histogram figure using go.Figure
     histogram_data = df['average.rating'].astype(float)
@@ -267,8 +292,10 @@ def navigation():
 
                            all_sentiment_piechart = all_sentiment_piechart,
                            specific_sentiment_piechart = specific_sentiment_piechart,
-                           all_wordcloud = all_wordcloud,
-                           specific_wordcloud = specific_wordcloud,
+                           all_keywords_wordcloud = all_keywords_wordcloud,
+                           specific_keywords_wordcloud = specific_keywords_wordcloud,
+                           all_averagerating_histogram = all_averagerating_histogram,
+                           specific_averagerating_histogram = specific_averagerating_histogram,
                            pcComparisonHeader = pcComparisonHeader, 
                            rrComparisonHeader = rrComparisonHeader, 
                            wcComparisonHeader = wcComparisonHeader,
