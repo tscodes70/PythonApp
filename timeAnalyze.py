@@ -109,14 +109,14 @@ def timeAnalysis():
     hotel_correlations_summer = hotel_correlations_summer.dropna()
     hotel_correlations_autumn = hotel_correlations_autumn.dropna()
 
-    correlation_results = pd.DataFrame({
-    'Hotel Name': hotel_correlations_winter.index,
-    'Correlation (Winter)': hotel_correlations_winter.values,
-    'Correlation (Spring)': hotel_correlations_spring.values,
-    'Correlation (Summer)': hotel_correlations_summer.values,
-    'Correlation (Autumn)': hotel_correlations_autumn.values,
-    'Correlation': name_correlations
-    })
+    # correlation_results = pd.DataFrame({
+    # 'Hotel Name': hotel_correlations_winter.index,
+    # 'Correlation (Winter)': hotel_correlations_winter.values,
+    # 'Correlation (Spring)': hotel_correlations_spring.values,
+    # 'Correlation (Summer)': hotel_correlations_summer.values,
+    # 'Correlation (Autumn)': hotel_correlations_autumn.values,
+    # 'Correlation': name_correlations
+    # })
 
     corr_dict = {}
     corr_dict['holiday'] = name_correlations.mean()
@@ -125,12 +125,14 @@ def timeAnalysis():
     corr_dict['summer'] = hotel_correlations_summer.mean()
     corr_dict['autumn'] = hotel_correlations_autumn.mean()
 
-    corr_dictDf = pd.DataFrame(list(corr_dict.items()), columns=['Variables', 'Correlation Coefficient'])
+    corr_dictDf = pd.DataFrame(list(corr_dict.items()), columns=[globalVar.CORRVARIABLE, globalVar.CORRCOEFFICIENT])
+
+    corr_dictDf.reset_index(drop=True, inplace=True)
 
     existing_data = pd.read_csv(globalVar.CORRFULLFILE)
-    updated_data = existing_data.append(corr_dictDf, ignore_index=True)
+    updated_data = existing_data._append(corr_dictDf)
 
-    updated_data.to_csv(globalVar.CORRFULLFILE, index=False)
+    updated_data.to_csv(globalVar.CORRFULLFILE,index=False)
 
     #print("Correlation with Winter:")
     #print(hotel_correlations_winter)
@@ -144,3 +146,5 @@ def timeAnalysis():
     # correlation_results.to_csv(output_file, index=False)
 
     # print(f'Data with holidays saved to {output_file}')
+
+# timeAnalysis()

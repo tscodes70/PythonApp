@@ -46,7 +46,7 @@
               <h3>Catergories of the accomodations</h3>
             <div>{{ pie_chart_div|safe }}</div><br>
             <h3>Map of Hotels in USA against the number of ratings</h3>
-            <div>{{ map_div | safe }}</div><br>
+            <div>{{ map_div | safe }}</div><br> 
             <label for="hotelName-dropdown">Select a Hotel:</label>
                 <form method="POST" action="{{ url_for('filtered_charts') }}">
                     <select id="hotelName-dropdown" name="hotelName-dropdown">

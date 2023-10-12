@@ -112,17 +112,22 @@ def filtered_charts():
     # Generate the word cloud
     wordcloud = WordCloud(width=800, height=400)
     wordcloud.generate(wordcloud_data)
+    plt.figure(figsize=(8, 4))
+    plt.imshow(wordcloud, interpolation='bilinear')
     img_buffer = BytesIO()
     plt.axis('off')
     plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
     img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
 
-    return render_template('userDashboard.html', img_data=img_data, hotelNames= hotel_name, histogram_heading=histogram_heading,                        wordcloud_heading=wordcloud_heading, histogram_div=histogram_div, hotelName=selected_hotel, pie_chart_div=pie_chart_div)
+    return render_template('userDashboard.html', img_data=img_data, hotelNames= hotel_name, histogram_heading=histogram_heading, 
+                           wordcloud_heading=wordcloud_heading, histogram_div=histogram_div, hotelName=selected_hotel, 
+                           pie_chart_div=pie_chart_div)
 
 def map():
-    df['reviews.total'] = df['reviews.total'].astype(str)
+    grouped_df = df.groupby('province')['reviews.total'].sum().reset_index()
     # Merge the data based on 'Province' and calculate the total number of reviews
-    merged_data = gdf.merge(df, left_on='STUSPS', right_on='province', how='left')
+    merged_data = gdf.merge(grouped_df, left_on='STUSPS', right_on='province', how='left')
 
     # Normalize the data if needed
     # Here, we are assuming you have a column 'Total Reviews' in your CSV data
@@ -133,16 +138,35 @@ def map():
                         geojson=gdf.geometry, 
                         locations=merged_data.index, 
                         color='reviews.total',
-                        hover_name='STUSPS')
+                        hover_name='STUSPS',
+                        range_color=[0,500])
+    
 
+    fig.update_geos(
+        visible=False,
+        projection_scale=1,
+        center={"lat": 37.0902, "lon": -95.7129},
+        scope="usa"
+    )
+
+    '''
+     # Use add_text to display state names
+    fig.add_text(
+        x=merged_data.geometry.centroid.x,
+        y=merged_data.geometry.centroid.y,
+        text=merged_data['STUSPS'],
+        textfont_size=12,
+        showarrow=False
+    )
+    '''
     # Convert the map to HTML
     map_div = fig.to_html(full_html=False)
-    return render_template('testfaz.html', map_div=map_div)
+    return render_template('userDashboard.html', map_div=map_div)
 
 @app.route('/', methods=['GET', 'POST'])
 def navigation():
     pie_chart_div = piechart()
-    #map_div = map()
+    map_div = map()
     histogram_heading = "Histogram"
     wordcloud_heading = "Word Cloud"
 
@@ -175,7 +199,7 @@ def navigation():
     img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
     
     #return render_template('userDashboard.html', pie_chart_div=pie_chart_div, histogram_heading=histogram_heading, wordcloud_heading=wordcloud_heading)
-    return render_template('userDashboard.html',  histogram_heading=histogram_heading, histogram_div=histogram_div, wordcloud_heading = wordcloud_heading, hotelNames=hotel_name, pie_chart_div=pie_chart_div, img_data=img_data)
+    return render_template('userDashboard.html', map_div=map_div, histogram_heading=histogram_heading, histogram_div=histogram_div, wordcloud_heading = wordcloud_heading, hotelNames=hotel_name, pie_chart_div=pie_chart_div, img_data=img_data)
     #return render_template('dashboard2.html', pie_chart_div=pie_chart_div, histogram_div=histogram_div)
 
 # import csv
