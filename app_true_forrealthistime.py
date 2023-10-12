@@ -36,9 +36,30 @@ tlfolder = "tl_2022_us_state"
 TLFILEFULL = os.path.join(globalVar.CWD,rf'{tlfolder}\tl_2022_us_state.shp')
 gdf = gpd.read_file(TLFILEFULL)
 
-def category_piechart():
+def get_hotel_details(s):
+    filter = df[df['name'] == s]
+    return (filter.values).tolist()
+
+# Charts
+def sentimentPieChart(csvFile):
+    df = pd.read_csv(csvFile)
+    df[globalVar.COMPOUND_SENTIMENT_SCORE] = pd.to_numeric(df[globalVar.COMPOUND_SENTIMENT_SCORE])
+    positiveSent = (df[globalVar.COMPOUND_SENTIMENT_SCORE] > 0).sum()
+    negativeSent = (df[globalVar.COMPOUND_SENTIMENT_SCORE] < 0).sum()
+    neutralSent = (df[globalVar.COMPOUND_SENTIMENT_SCORE] == 0).sum()
+    pcLabels = ["Positive Sentiment", "Negative Sentiment", "Neutral Sentiment"]
+    valList = [positiveSent,negativeSent,neutralSent]
+
+    # Create the Plotly pie chart
+    spc = go.Figure(data=[go.Pie(labels=pcLabels, values=valList)])
+    # Convert the chart to an HTML div
+    sentiment_piechart = spc.to_html(full_html=False)
+    return sentiment_piechart
+
+def accomodationPieChart(csvFile):
+    df = pd.read_csv(csvFile)
     # Assuming the CSV has a 'Category' column, get the top 4 values
-    top_categories = df['categories'].value_counts().nlargest(4)
+    top_categories = df[globalVar.CATEGORIES].value_counts().nlargest(4)
     # Create the Plotly pie chart
     pie_chart = go.Figure(data=[go.Pie(labels=top_categories.index, values=top_categories)])
     # Convert the chart to an HTML div
@@ -46,15 +67,48 @@ def category_piechart():
 
     return pie_chart_div
 
-def get_hotel_details(s):
-    filter = df[df['name'] == s]
-    return (filter.values).tolist()
+def keywordsWordCloud(csvFile):
+    df = pd.read_csv(csvFile)
+    keywords = df[globalVar.POPULAR_KEYWORDS].tolist()
+    word_freq = {}
+    for item in keywords:
+        word_list = ast.literal_eval(item)  # Convert the string to a list of tuples
+        for word, freq in word_list:
+            if word in word_freq:
+                word_freq[word] += int(freq)  # Convert freq to int and add to existing count
+            else:
+                word_freq[word] = int(freq)
+
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_freq)
+    plt.figure(figsize=(8, 4))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    img_buffer = BytesIO()
+    plt.axis('off')
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    wordcloud = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+    return wordcloud
+
+def averageRatingHistogram(csvFile,dfHeader):
+    df = pd.read_csv(csvFile)
+    histogram_data = df[dfHeader].astype(float)
+    histHeader = "Average Rating" if dfHeader == globalVar.AVERAGE_RATING else "Rating"
+
+    # Create a histogram figure using go.Figure
+    histogram = go.Figure(data=[go.Histogram(x=histogram_data)])
+    histogram.update_layout(
+        title=f'Histogram of {histHeader}',
+        xaxis_title= f"{histHeader}",
+        yaxis_title='Count'
+    )
+    rating_histogram = histogram.to_html()
+    return rating_histogram
 
 def scatterplot():
     scattermap = px.scatter(df, x=globalVar.AVERAGE_RATING, y=globalVar.COMPOUND_SENTIMENT_SCORE)
     return scattermap.to_html()
 
-def bargraph():
+def provinceHistogram():
     count_province = df.groupby([globalVar.PROVINCE]).size().reset_index(name='Number of Hotels')
     provinces = px.bar(count_province, x='province', y='Number of Hotels')
     return provinces.to_html()
@@ -89,7 +143,7 @@ def map():
 
 @app.route('/filtered_charts', methods=['GET','POST'])
 def filtered_charts():
-    pie_chart_div = category_piechart()
+    pie_chart_div = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
     selected_hotel = request.form['hotelName-dropdown']
 
     # histogram
@@ -140,98 +194,87 @@ def filtered_charts():
         selected_hotel = 'All hotels'
     
     scattermap = scatterplot()
-    provinces = bargraph()
+    provinces = provinceHistogram()
 
     return render_template('userDashboard copy.html', img_data=img_data, hotelNames= hotel_name, 
                            histogram_heading=histogram_heading,wordcloud_heading=wordcloud_heading, 
                            histogram_div=histogram_div, hotelName=selected_hotel, pie_chart_div=pie_chart_div,
                            hotel_details=hotel_details, scattermap=scattermap, provinces=provinces)
 
-#`````````````````````````````````````````Teemo```````````````````````````````
+@app.route('/', methods=['GET','POST'])
+def upload():
+    if request.method == 'POST':
+	    #check if POST request has file
+        if 'file' not in request.files:
+            flash('Invalid file upload')
+            return redirect('upload.html')
+        # get file from POST
+        f = request.files.get('file')
+        filename = secure_filename(f.filename)
+        f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        #save the stuff and redirect to dashboard and save the file path to session for reading
+        session['uploaded_data_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'],
+					filename)
+        
+        # 1) user will upload their own related hotel csv
+        # 2) csv will get cleaned, analyzed and home page will read wtv yall need from examplehotelname_analyzedreviews_12-Oct.csv and examplehotelname_analyzedhotels_12-Oct.csv
+        # insert cleaning and analysis here
 
-# Charts
-def sentimentPieChart(csvFile):
-    df = pd.read_csv(csvFile)
-    df[globalVar.COMPOUND_SENTIMENT_SCORE] = pd.to_numeric(df[globalVar.COMPOUND_SENTIMENT_SCORE])
-    positiveSent = (df[globalVar.COMPOUND_SENTIMENT_SCORE] > 0).sum()
-    negativeSent = (df[globalVar.COMPOUND_SENTIMENT_SCORE] < 0).sum()
-    neutralSent = (df[globalVar.COMPOUND_SENTIMENT_SCORE] == 0).sum()
-    pcLabels = ["Positive Sentiment", "Negative Sentiment", "Neutral Sentiment"]
-    valList = [positiveSent,negativeSent,neutralSent]
+        
+        #Session stuff 
+        session['analyzed_hotels'] = os.path.join(app.config['UPLOAD_FOLDER'],"yotel_analyzedhotels_13-Oct.csv")
+        session['analyzed_reviews'] = os.path.join(app.config['UPLOAD_FOLDER'],"yotel_analyzedreviews_13-Oct.csv")
 
-    # Create the Plotly pie chart
-    spc = go.Figure(data=[go.Pie(labels=pcLabels, values=valList)])
-    # Convert the chart to an HTML div
-    sentiment_piechart = spc.to_html(full_html=False)
-    return sentiment_piechart
+        return redirect('/home')
 
-def keywordsWordCloud(csvFile):
-    df = pd.read_csv(csvFile)
-    keywords = df[globalVar.POPULAR_KEYWORDS].tolist()
-    word_freq = {}
-    for item in keywords:
-        word_list = ast.literal_eval(item)  # Convert the string to a list of tuples
-        for word, freq in word_list:
-            if word in word_freq:
-                word_freq[word] += int(freq)  # Convert freq to int and add to existing count
-            else:
-                word_freq[word] = int(freq)
+    return render_template("upload.html")
 
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_freq)
-    plt.figure(figsize=(8, 4))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    img_buffer = BytesIO()
-    plt.axis('off')
-    plt.savefig(img_buffer, format='png')
-    img_buffer.seek(0)
-    wordcloud = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
-    return wordcloud
+@app.route('/api/general')
+def summary():
+     dfc = df.copy()
+     dfc.columns = dfc.columns.str.replace('.', '_')
+     jsonfile = dfc.to_json(orient='table')
+     return jsonfile
 
-def averageRatingHistogram(csvFile,dfHeader):
-    df = pd.read_csv(csvFile)
-    histogram_data = df[dfHeader].astype(float)
-    histHeader = "Average Rating" if dfHeader == globalVar.AVERAGE_RATING else "Rating"
-
-    # Create a histogram figure using go.Figure
-    histogram = go.Figure(data=[go.Histogram(x=histogram_data)])
-    histogram.update_layout(
-        title=f'Histogram of {histHeader}',
-        xaxis_title= f"{histHeader}",
-        yaxis_title='Count'
-    )
-    rating_histogram = histogram.to_html()
-    return rating_histogram
-
-#````````````````````````````````````````````````````````````````````````
-
-
-@app.route('/dashboard', methods=['GET', 'POST'])
-def navigation():
-    # Home page will render info related to a singular hotel : hotel info, word map for single hotel, etc
-    # General overview will return all info related to all hotels : selected hotel info, word map (can be selected), graphs, table
-
-    # home
-    # read file name from session
-    hotel_df = pd.read_csv(session['uploaded_data_file_path'], index_col=0)
-    # read this in main home 
+@app.route('/home', methods=("POST", "GET"))
+def homePage():
+    hotel_df = pd.read_csv(session['analyzed_hotels'], index_col=0)
     main_hotel_details = hotel_df.values.tolist()
-    # make a word cloud specific to file session hotel
-    t = ' '.join(hotel_df[globalVar.GREVIEWS_SUMMARY].astype(str))
-    wordcloud = WordCloud(width=800, height=400)
-    wordcloud.generate(t)
-    img_buffer = BytesIO()
-    plt.figure(figsize=(8, 4))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    plt.savefig(img_buffer, format='png')
-    img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+    pcHeader = "Pie Chart" 
+    rrHeader = "Review Rating"
+    wcHeader = "Word Cloud"
+    amHeader = "Amenities"
+    accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+    specific_sentiment_piechart = sentimentPieChart(session['analyzed_reviews'])
+    specific_keywords_wordcloud = keywordsWordCloud(session['analyzed_hotels'])
+    specific_averagerating_histogram = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
 
-    pie_chart_div = category_piechart()
+    return render_template("home.html",
+                           pcHeader=pcHeader,
+                           rrHeader=rrHeader, 
+                           wcHeader=wcHeader,
+                           amHeader=amHeader,
+                           accomo_piechart = accomo_piechart,
+                           specific_sentiment_piechart = specific_sentiment_piechart,
+                           specific_keywords_wordcloud = specific_keywords_wordcloud,
+                           specific_averagerating_histogram = specific_averagerating_histogram,
+                           main_hotel_details=main_hotel_details)
+
+@app.route('/comparison', methods=("POST", "GET"))
+def comparisonPage():
+    hotel_df = pd.read_csv(session['analyzed_hotels'], index_col=0)
     map_div = map()
-    histogram_heading = "Histogram"
-    wordcloud_heading = "Word Cloud"
+    scattermap = scatterplot()
+    provinces = provinceHistogram()
+    accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
 
-#`````````````````````````````````````````Teemo```````````````````````````````
+    hotel_df = pd.read_csv(session['analyzed_hotels'], index_col=0)
+    main_hotel_details = hotel_df.values.tolist()
+    pcHeader = "Pie Chart" 
+    rrHeader = "Review Rating"
+    wcHeader = "Word Cloud"
+    amHeader = "Amenities"
+
     # Comparisons
     pcComparisonHeader = "Pie Chart Comparison"
     wcComparisonHeader = "Word Cloud Comparison"
@@ -248,48 +291,17 @@ def navigation():
     all_averagerating_histogram = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.AVERAGE_RATING)
     specific_averagerating_histogram = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
 
-    hotel_name = df['name'].unique()
+    hotel_name = df[globalVar.NAME].unique()
 
-#````````````````````````````````````````````````````````````````````````
-    
-    # Create a histogram figure using go.Figure
-    histogram_data = df['average.rating'].astype(float)
-    histogram = go.Figure(data=[go.Histogram(x=histogram_data)])
-    histogram.update_layout(
-        title=f'Histogram of Average Rating',
-        xaxis_title='Average Rating',
-        yaxis_title='Count'
-    )
-    histogram_div = histogram.to_html()
-    
-    # Generate the word cloud
-    # text = ' '.join(df['reviews.summary'].astype(str))
-
-    # Generate the word cloud
-    # wordcloud = WordCloud(width=800, height=400)
-    # wordcloud.generate(text)
-
-    # Render the word cloud as a base64-encoded image
-    # img_buffer = BytesIO()
-    # plt.figure(figsize=(8, 4))
-    # plt.imshow(wordcloud, interpolation='bilinear')
-    # plt.axis('off')
-    # plt.savefig(img_buffer, format='png')
-    # img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
-
-    scattermap = scatterplot()
-    provinces = bargraph()
-
-    return render_template('userDashboard copy.html',
-                           histogram_heading=histogram_heading, 
-                           histogram_div=histogram_div, 
-                           wordcloud_heading = wordcloud_heading, 
+    return render_template("comparison.html",
+                           pcHeader=pcHeader,
+                           rrHeader=rrHeader, 
+                           wcHeader=wcHeader,
+                           amHeader=amHeader,
+                           accomo_piechart = accomo_piechart,
                            hotelNames=hotel_name, 
-                           pie_chart_div=pie_chart_div, 
                            scattermap=scattermap, 
-                           img_data=img_data,
                            provinces=provinces, 
-
                            all_sentiment_piechart = all_sentiment_piechart,
                            specific_sentiment_piechart = specific_sentiment_piechart,
                            all_keywords_wordcloud = all_keywords_wordcloud,
@@ -303,43 +315,39 @@ def navigation():
                            main_hotel_details=main_hotel_details,
                            map_div=map_div)
 
-@app.route('/', methods=['GET','POST'])
-def upload():
-    if request.method == 'POST':
-	    #check if POST request has file
-        if 'file' not in request.files:
-            flash('Invalid file upload')
-            return redirect('new_upload.html')
-        # get file from POST
-        f = request.files.get('file')
-        filename = secure_filename(f.filename)
-        f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        #save the stuff and redirect to dashboard and save the file path to session for reading
-        session['uploaded_data_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'],
-					filename)
-        
-        # 1) user will upload their own related hotel csv
-        # 2) csv will get cleaned, analyzed and home page will read wtv yall need from examplehotelname_analyzedreviews_12-Oct.csv and examplehotelname_analyzedhotels_12-Oct.csv
-        # insert cleaning and analysis here
+@app.route('/general', methods=("POST", "GET"))
+def generalPage():
+    hotel_df = pd.read_csv(session['analyzed_hotels'], index_col=0)
+    map_div = map()
+    scattermap = scatterplot()
+    provinces = provinceHistogram()
+    accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
 
-        
-        #Session stuff 
-        session['analyzed_hotels'] = os.path.join(app.config['UPLOAD_FOLDER'],"yotel_analyzedhotels_12-Oct.csv")
-        session['analyzed_reviews'] = os.path.join(app.config['UPLOAD_FOLDER'],"yotel_analyzedreviews_12-Oct.csv")
-        return redirect('/dashboard')
+    pcHeader = "Pie Chart" 
+    rrHeader = "Review Rating"
+    wcHeader = "Word Cloud"
+    amHeader = "Amenities"
 
-    return render_template("new_upload.html")
+    all_sentiment_piechart = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
+    all_keywords_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+    all_averagerating_histogram = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.AVERAGE_RATING)
 
-@app.route('/api/general')
-def summary():
-     dfc = df.copy()
-     dfc.columns = dfc.columns.str.replace('.', '_')
-     jsonfile = dfc.to_json(orient='table')
-     return jsonfile
+    return render_template("general.html",
+                           pcHeader=pcHeader,
+                           rrHeader=rrHeader, 
+                           wcHeader=wcHeader,
+                           amHeader=amHeader,
+                           accomo_piechart = accomo_piechart,
+                           scattermap=scattermap, 
+                           provinces=provinces, 
+                           all_sentiment_piechart = all_sentiment_piechart,
+                           all_keywords_wordcloud = all_keywords_wordcloud,
+                           all_averagerating_histogram = all_averagerating_histogram,
+                           map_div=map_div)
 
-@app.route('/viewSummary', methods=("POST", "GET"))
-def index():
-    return render_template("viewSummary.html", title="View Summary")
-   
+@app.route('/summary', methods=("POST", "GET"))
+def summaryPage():
+    return render_template("summary.html")
+
 if __name__ == "__main__":    
   app.run(debug=True)

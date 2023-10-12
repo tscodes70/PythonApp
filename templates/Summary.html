@@ -1,5 +1,5 @@
-<!-- Page Content -->
-{% extends "new_base.html" %}
+{% extends "template.html" %}
+
 
 {% block head %}
 <head>
@@ -20,11 +20,6 @@
 {% endblock %}
 
 {% block body %}
-<div class="container-fluid">
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <a class="btn btn-primary" href="/" role="button">Return</a>
-  </nav>
-  <br>
   <table id='analysed_data' class="display">
       <thead>
         <tr>
@@ -34,7 +29,8 @@
           <th>Categories</th>
           <th>Primary Categories</th>
           <th>Compound Sentiment</th>
-          <th>Review Summary</th>
+          <th>Top Review Summary</th>
+          <th>Bottom Review Summary</th>
           <th>Total Reviews</th>
           <th>Popular Keywords</th>
           <th>Average Rating</th>
@@ -42,7 +38,7 @@
       </thead>
       <tbody>
       </tbody>
-      <tfoot>
+      <!-- <tfoot>
         <th>Hotel Name</th>
         <th>Province</th>
         <th>Postal Code</th>
@@ -53,7 +49,7 @@
         <th>Total Reviews</th>
         <th>Popular Keywords</th>
         <th>Average Rating</th>
-      </tfoot>
+      </tfoot> -->
     </table>
     <br>
     <script>
@@ -73,7 +69,8 @@
                     {data: 'categories'},
                     {data: 'primaryCategories'},
                     {data: 'Compound Sentiment'},
-                    {data: 'reviews_summary'},
+                    {data: 'good_reviews_summary'},
+                    {data: 'bad_reviews_summary'},
                     {data: 'reviews_total'},
                     {data: 'popular_keywords'},
                     {data: 'average_rating'}
@@ -85,5 +82,4 @@
             });
         });
     </script>
-</div>
 {% endblock %}  

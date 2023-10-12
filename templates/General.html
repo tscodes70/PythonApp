@@ -1,0 +1,130 @@
+{% extends "template.html" %}
+
+{% block head %}
+
+<head>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css" />
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+</head>
+{% endblock %}
+
+{% block body %}
+<form method="POST" action="{{ url_for('filtered_charts') }}">
+  <div class="form-group">
+    <label for="hotelName-dropdown">Choose a Hotel</label>
+      <select class="custom-select" id="hotelName-dropdown" name="hotelName-dropdown">
+          <option value="">All</option>
+        {% for hotelName in hotelNames %}
+          <option value="{{ hotelName }}">{{ hotelName }}</option>
+        {% endfor%}
+      </select>
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+<div class="row">
+  <div class="col">
+    <h3>Map of Hotels in USA against the number of ratings</h3>
+    <div>{{ map_div | safe }}</div><br>
+  </div>
+</div>
+<div class="row">
+  <div class="col">
+    <h3>Categories of the accomodations</h3>
+    <div>{{ accomo_piechart|safe }}</div>
+  </div>
+  <div class="col">
+    <h3>Number of hotels per Provinces in USA</h3>
+    <div>{{ provinces|safe }}</div>
+  </div>
+</div>
+<div class="row">
+  <div class="col">
+    <h3>Wordcloud</h3>
+    <img src="data:image/png;base64,{{ all_keywords_wordcloud }}" alt="Word Cloud">
+  </div>
+
+</div>
+<div class="row">
+  <div class="col">
+    <h3>Average Rating of the accomodations</h3>
+    <div>{{ all_averagerating_histogram|safe }}</div>
+  </div>
+  <div class="col">
+    <h3>Correlation of Compound Sentiment to Average Rating</h3>
+    <div>{{ scattermap|safe }}</div>
+  </div>
+</div>
+<div class="row">
+  <div class="col">
+    <h3>Other Hotel Information</h3>
+    <table id='all_data_table' class="display">
+      <thead>
+        <tr>
+          <th>Hotel Name</th>
+          <th>Province</th>
+          <th>Postal Code</th>
+          <th>Categories</th>
+          <th>Primary Categories</th>
+          <th>Compound Sentiment</th>
+          <th>Top Review Summary</th>
+          <th>Bottom Review Summary</th>
+          <th>Total Reviews</th>
+          <th>Popular Keywords</th>
+          <th>Average Rating</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+      <!-- <tfoot>
+        <th>Hotel Name</th>
+        <th>Province</th>
+        <th>Postal Code</th>
+        <th>Categories</th>
+        <th>Primary Categories</th>
+        <th>Compound Sentiment</th>
+        <th>Review Summary</th>
+        <th>Total Reviews</th>
+        <th>Popular Keywords</th>
+        <th>Average Rating</th>
+      </tfoot> -->
+    </table>
+  </div>
+</div>
+<script>
+  $(document).ready(function () {
+    $('#all_data_table').DataTable({
+      search: {
+        return: true
+      },
+      autoWidth: false,
+      ajax: {
+        url: '/api/general',
+      },
+      columns: [
+        { data: 'name' },
+        { data: 'province' },
+        { data: 'postalCode' },
+        { data: 'categories', visible: false },
+        { data: 'primaryCategories', visible: false },
+        { data: 'Compound Sentiment', visible: false },
+        { data: 'good_reviews_summary' },
+        { data: 'bad_reviews_summary' },
+        { data: 'reviews_total' },
+        { data: 'popular_keywords', visible: false },
+        { data: 'average_rating' }
+      ]
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "template.html" %}
+
+{% block body %}
+<!-- Pie Chart Showing percentage of positive,negative,neutral reviews -->
+<h4>{{ pcComparisonHeader }}</h4>
+<div class="row">
+  <!-- Hotel x piechart-->
+  <div class="col">
+    hotel x
+    <div>{{ specific_sentiment_piechart|safe }}</div>
+  </div>
+  <!-- All piechart-->
+  <div class="col">
+    All hotels
+    <div>{{ all_sentiment_piechart|safe }}</div>
+  </div>
+</div>
+<!-- Piechart insights-->
+<div class="row">
+  <div class="col">
+    Pie Chart compare
+  </div>
+</div>
+<!--end of piechart-->
+
+<!-- Review Rating Bar Chart -->
+<h4>{{ rrComparisonHeader }}</h4>
+<div class="row">
+  <!-- Hotel x rating of reviews -->
+  <div class="col">
+    hotel x
+    <div>{{ specific_averagerating_histogram |safe }}</div>
+  </div>
+  <!-- All average review rating -->
+  <div class="col">
+    All hotels
+    <div>{{ all_averagerating_histogram|safe }}</div>
+  </div>
+</div>
+<!-- Review Rating insights -->
+<div class="row">
+  <div class="col">
+    Review Rating compare
+  </div>
+</div>
+<!--end of review rating-->
+
+<!-- Word Cloud showing most discussed topics of reviews -->
+<h4>{{ wcComparisonHeader }}</h4>  
+<div class="row">
+  <!-- Hotel x wordcloud -->
+  <div class="col">
+    hotel x
+    <img src="data:image/png;base64,{{ specific_keywords_wordcloud }}" alt="Word Cloud">
+  </div>
+  <!-- All wordcloud -->
+  <div class="col">
+    All hotels
+    <img src="data:image/png;base64,{{ all_keywords_wordcloud }}" alt="Word Cloud">
+  </div>
+</div>
+<!-- Wordcloud insights -->
+<div class="row">
+  <div class="col">
+    Word clouds are often used to quickly and intuitively visualize the most prominent words in a body of text, helping to identify key themes, terms, or patterns within the data.
+  </div>
+</div>
+<!--end of wordcloud-->
+
+<!-- Amenities comparison, showing potential amenties to implement -->
+<h4>{{ amComparisonHeader }}</h4>  
+<div class="row">
+  <!-- Hotel x amenities -->
+  <div class="col">
+    hotel x
+  </div>
+  <!-- All amenties -->
+  <div class="col">
+    All hotels
+  </div>
+</div>
+<!-- Amenties insights -->
+<div class="row">
+  <div class="col">
+    you can implement xxx amenties
+  </div>
+</div>
+<!--end of amenities-->
+{% endblock %}  
