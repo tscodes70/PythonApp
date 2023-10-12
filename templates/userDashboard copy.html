@@ -24,26 +24,15 @@
           <li class="nav-item">
             <a class="nav-link" id="export" href="/viewSummary" aria-controls="pills-contact" aria-selected="false">View Summary</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link" id="export" href="/" aria-controls="pills-contact" aria-selected="false">Upload Another Dataset</a>
+          </li>
       </ul>
 
       <div class="tab-content" id="pills-tabContent">
           
-        <div class="tab-pane fade show active" id="pills-home" role="tabpanel">
-          <form method="POST" action="{{ url_for('filtered_charts') }}">
-            <div class="form-group">
-              <label for="hotelName-dropdown">Choose a Hotel</label>
-                <select class="custom-select" id="hotelName-dropdown" name="hotelName-dropdown">
-                    <option value="">All</option>
-                  {% for hotelName in hotelNames %}
-                    <option value="{{ hotelName }}">{{ hotelName }}</option>
-                  {% endfor%}
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary">Submit</button>
-          </form>
-          <br>
-            <!-- hotel info to be displayed ONLY if selected-->
-            <div id="hotel_info" style="display:none;">
+        <div class="tab-pane fade show active" id="pills-home" role="tabpanel"> 
+           <div id="main_hotel_info">
               <div class="row">
                 <div class="col-4">
                   <div class="list-group" id="list-tab" role="tablist">
@@ -56,112 +45,100 @@
                 <div class="col-8">
                   <div class="tab-content" id="nav-tabContent">
                     <div class="tab-pane fade show active" role="tabpanel" aria-labelledby="list-home-list" id="hotel_name">
-                      {% if hotel_details %}
-                      {{ hotel_details [0][0] }}
-                      {% endif %}
+                      {{ main_hotel_details [0][0] }}
                     </div>
                     <div class="tab-pane fade" role="tabpanel" aria-labelledby="list-profile-list" id="hotel_location">
-                      {% if hotel_details %}
-                      Province: {{ hotel_details[0][1] }}<br>
-                      Postal Code: {{ hotel_details[0][2] }}
-                      {% endif %}
+                      Province: {{ main_hotel_details[0][1] }}<br>
+                      Postal Code: {{ main_hotel_details[0][2] }}
                     </div>
                     <div class="tab-pane fade" role="tabpanel" aria-labelledby="list-messages-list" id="hotel_ratings">
-                      {% if hotel_details %}
-                      Number of Reviwes: {{ hotel_details[0][7] }}<br>
-                      Average Rating: {{ hotel_details[0][9] }}<br> 
-                      Compound Sentiment: {{ hotel_details[0][5] }}
-                      {% endif %}
+                      Number of Reviwes: {{ main_hotel_details[0][7] }}<br>
+                      Average Rating: {{ main_hotel_details[0][9] }}<br> 
+                      Compound Sentiment: {{ main_hotel_details[0][5] }}
                     </div>
                     <div class="tab-pane fade" role="tabpanel" aria-labelledby="list-settings-list" id="hotel_reviews">
-                      {% if hotel_details %}
-                      {{ hotel_details[0][6] }}
-                      {% endif %}
+                      {{ main_hotel_details[0][6] }}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
             <br>
-            <!-- script for display-->
-            <script>
-              $(document).ready(function () {
-                var hotel_details = {{ hotel_details|safe }};
-
-                if (hotel_details.length > 0) {
-                  $('#hotel_info').show()
-                } else {
-                  $('#hotel_info').hide()
-                }
-              });
-            </script>
-
-              <h3>Map of Hotels in USA against the number of ratings</h3>
-            <div>{{ map_div | safe }}</div><br>
             <h3>{{ wordcloud_heading }}</h3>  
             <img src="data:image/png;base64,{{ img_data }}" alt="Word Cloud">
-            <h3>Other Hotel Information</h3>
-            <table id='analysed_data' class="display">
-              <thead>
-                <tr>
-                  <th>Hotel Name</th>
-                  <th>Province</th>
-                  <th>Postal Code</th>
-                  <th>Categories</th>
-                  <th>Primary Categories</th>
-                  <th>Compound Sentiment</th>
-                  <th>Review Summary</th>
-                  <th>Total Reviews</th>
-                  <th>Popular Keywords</th>
-                  <th>Average Rating</th>
-                </tr>
-              </thead>
-              <tbody>
-              </tbody>
-              <tfoot>
-                <th>Hotel Name</th>
-                <th>Province</th>
-                <th>Postal Code</th>
-                <th>Categories</th>
-                <th>Primary Categories</th>
-                <th>Compound Sentiment</th>
-                <th>Review Summary</th>
-                <th>Total Reviews</th>
-                <th>Popular Keywords</th>
-                <th>Average Rating</th>
-              </tfoot>
-            </table>
-            <br>
-            <script>
-                $(document).ready( function () {
-                    $('#analysed_data').DataTable( {
-                        search: {
-                        return: true
-                        },
-                        autoWidth:false, 
-                        ajax:{
-                            url:'/api/general',
-                        },
-                        columns: [
-                            {data: 'name'},
-                            {data: 'province'},
-                            {data: 'postalCode'},
-                            {data: 'categories', visible:false},
-                            {data: 'primaryCategories', visible: false},
-                            {data: 'Compound Sentiment', visible: false},
-                            {data: 'reviews_summary'},
-                            {data: 'reviews_total'},
-                            {data: 'popular_keywords', visible: false},
-                            {data: 'average_rating'}
-                        ]
-                    });
-                });
-            </script>
 
           </div>
 
           <div class="tab-pane fade" id="pills-profile" role="tabpanel">
-            <h1>General Overview</h1>
+          <h1>General Overview</h1>
+          <form method="POST" action="{{ url_for('filtered_charts') }}">
+            <div class="form-group">
+              <label for="hotelName-dropdown">Choose a Hotel</label>
+                <select class="custom-select" id="hotelName-dropdown" name="hotelName-dropdown">
+                    <option value="">All</option>
+                  {% for hotelName in hotelNames %}
+                    <option value="{{ hotelName }}">{{ hotelName }}</option>
+                  {% endfor%}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </form>
+          <div class="row">
+            <div class="col">
+              <div id="hotel_info" style="display:none;">
+                <div class="row">
+                  <div class="col-4">
+                    <div class="list-group" id="list-tab" role="tablist">
+                      <a class="list-group-item list-group-item-action active" id="list-home-list" data-toggle="list" href="#hotel_name" role="tab" aria-controls="home">Name</a>
+                      <a class="list-group-item list-group-item-action" id="list-profile-list" data-toggle="list" href="#hotel_location" role="tab" aria-controls="profile">Location</a>
+                      <a class="list-group-item list-group-item-action" id="list-messages-list" data-toggle="list" href="#hotel_ratings" role="tab" aria-controls="messages">Ratings</a>
+                      <a class="list-group-item list-group-item-action" id="list-settings-list" data-toggle="list" href="#hotel_reviews" role="tab" aria-controls="settings">Review Summary</a>
+                    </div>
+                  </div>
+                  <div class="col-8">
+                    <div class="tab-content" id="nav-tabContent">
+                      <div class="tab-pane fade show active" role="tabpanel" aria-labelledby="list-home-list" id="hotel_name">
+                        {% if hotel_details %}
+                        {{ hotel_details [0][0] }}
+                        {% endif %}
+                      </div>
+                      <div class="tab-pane fade" role="tabpanel" aria-labelledby="list-profile-list" id="hotel_location">
+                        {% if hotel_details %}
+                        Province: {{ hotel_details[0][1] }}<br>
+                        Postal Code: {{ hotel_details[0][2] }}
+                        {% endif %}
+                      </div>
+                      <div class="tab-pane fade" role="tabpanel" aria-labelledby="list-messages-list" id="hotel_ratings">
+                        {% if hotel_details %}
+                        Number of Reviwes: {{ hotel_details[0][7] }}<br>
+                        Average Rating: {{ hotel_details[0][9] }}<br> 
+                        Compound Sentiment: {{ hotel_details[0][5] }}
+                        {% endif %}
+                      </div>
+                      <div class="tab-pane fade" role="tabpanel" aria-labelledby="list-settings-list" id="hotel_reviews">
+                        {% if hotel_details %}
+                        {{ hotel_details[0][6] }}
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <br>
+              <!-- script for display-->
+              <script>
+                $(document).ready(function () {
+                  var hotel_details = {{ hotel_details|safe }};
+  
+                  if (hotel_details.length > 0) {
+                    $('#hotel_info').show()
+                  } else {
+                    $('#hotel_info').hide()
+                  }
+                });
+              </script>
+            </div>
+          </div>
           <div class="row">
             <div class="col">
               <h3>Catergories of the accomodations</h3>
@@ -180,6 +157,12 @@
             <div class="col">
               <h3>Correlation of Compound Sentiment to Average Rating</h3>
               <div>{{ scattermap|safe }}</div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <h3>Map of Hotels in USA against the number of ratings</h3>
+              <div>{{ map_div | safe }}</div><br> 
             </div>
           </div>
           <div class="row"> 

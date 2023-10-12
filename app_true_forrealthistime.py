@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, redirect
+from flask import Flask, render_template, request, session, redirect, flash
 from flask_bootstrap import Bootstrap
 import pandas as pd
 import plotly.graph_objs as go
@@ -21,8 +21,13 @@ import globalVar
 
 app = Flask(__name__)
 Bootstrap(app)
+app.secret_key = 'This is your secret key to utilize session in Flask'
 
-# takes data from outputdata.csv and loads it into a pandas dataframe
+# allow upload to csvs folder
+UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../csvs/'))
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# takes data from analysedhotel-DATE.csv and loads it into a pandas dataframe
 fileread = os.path.join(globalVar.CSVD,globalVar.ANALYSISHOTELOUTPUTFULLFILE)
 df = pd.read_csv(fileread, index_col=0)
 
@@ -54,6 +59,34 @@ def bargraph():
     count_province = df.groupby([globalVar.PROVINCE]).size().reset_index(name='Number of Hotels')
     provinces = px.bar(count_province, x='province', y='Number of Hotels')
     return provinces.to_html()
+
+def map():
+    grouped_df = df.groupby('province')['reviews.total'].sum().reset_index()
+    # Merge the data based on 'Province' and calculate the total number of reviews
+    merged_data = gdf.merge(grouped_df, left_on='STUSPS', right_on='province', how='left')
+
+    # Normalize the data if needed
+    # Here, we are assuming you have a column 'Total Reviews' in your CSV data
+    # You may want to scale the data to fit the color scale properly
+
+    # Create a chloropleth map using Plotly Express
+    fig = px.choropleth(merged_data, 
+                        geojson=gdf.geometry, 
+                        locations=merged_data.index, 
+                        color='reviews.total',
+                        hover_name='STUSPS',
+                        range_color=[0,500])
+
+
+    fig.update_geos(
+        visible=False,
+        projection_scale=1,
+        center={"lat": 37.0902, "lon": -95.7129},
+        scope="usa"
+    )
+    # Convert the map to HTML
+    map_div = fig.to_html(full_html=False)
+    return map_div
 
 @app.route('/filtered_charts', methods=['GET','POST'])
 def filtered_charts():
@@ -110,15 +143,34 @@ def filtered_charts():
     scattermap = scatterplot()
     provinces = bargraph()
 
-    return render_template('userDashboard copy.html', img_data=img_data, hotelNames= hotel_name, 
+    return render_template('userDashboard copy 2.html', img_data=img_data, hotelNames= hotel_name, 
                            histogram_heading=histogram_heading,wordcloud_heading=wordcloud_heading, 
                            histogram_div=histogram_div, hotelName=selected_hotel, pie_chart_div=pie_chart_div,
                            hotel_details=hotel_details, scattermap=scattermap, provinces=provinces)
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/dashboard', methods=['GET', 'POST'])
 def navigation():
+    # Home page will render info related to a singular hotel : hotel info, word map for single hotel, etc
+    # General overview will return all info related to all hotels : selected hotel info, word map (can be selected), graphs, table
+    
+    # home
+    # read file name from session
+    hotel_df = pd.read_csv(session['uploaded_data_file_path'], index_col=0)
+    # read this in main home 
+    main_hotel_details = hotel_df.values.tolist()
+    # make a word cloud specific to file session hotel
+    t = ' '.join(hotel_df['reviews.summary'].astype(str))
+    wordcloud = WordCloud(width=800, height=400)
+    wordcloud.generate(t)
+    img_buffer = BytesIO()
+    plt.figure(figsize=(8, 4))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    plt.savefig(img_buffer, format='png')
+    img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+
     pie_chart_div = category_piechart()
-    #map_div = map()
+    map_div = map()
     histogram_heading = "Histogram"
     wordcloud_heading = "Word Cloud"
 
@@ -141,19 +193,19 @@ def navigation():
     histogram_div = histogram.to_html()
     
     # Generate the word cloud
-    text = ' '.join(df['reviews.summary'].astype(str))
+    # text = ' '.join(df['reviews.summary'].astype(str))
 
     # Generate the word cloud
-    wordcloud = WordCloud(width=800, height=400)
-    wordcloud.generate(text)
+    # wordcloud = WordCloud(width=800, height=400)
+    # wordcloud.generate(text)
 
     # Render the word cloud as a base64-encoded image
-    img_buffer = BytesIO()
-    plt.figure(figsize=(8, 4))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    plt.savefig(img_buffer, format='png')
-    img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+    # img_buffer = BytesIO()
+    # plt.figure(figsize=(8, 4))
+    # plt.imshow(wordcloud, interpolation='bilinear')
+    # plt.axis('off')
+    # plt.savefig(img_buffer, format='png')
+    # img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
 
     scattermap = scatterplot()
     provinces = bargraph()
@@ -170,7 +222,30 @@ def navigation():
                            pcComparisonHeader = pcComparisonHeader, 
                            rrComparisonHeader = rrComparisonHeader, 
                            wcComparisonHeader = wcComparisonHeader,
-                           amComparisonHeader = amComparisonHeader)
+                           amComparisonHeader = amComparisonHeader
+                           main_hotel_details=main_hotel_details,
+                           map_div=map_div)
+
+@app.route('/', methods=['GET','POST'])
+def upload():
+    if request.method == 'POST':
+	    #check if POST request has file
+        if 'file' not in request.files:
+            flash('Invalid file upload')
+            return redirect('new_upload.html')
+        # get file from POST
+        f = request.files.get('file')
+        filename = secure_filename(f.filename)
+        f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        #save the stuff and redirect to dashboard and save the file path to session for reading
+        session['uploaded_data_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'],
+					filename)
+        # 1) user will upload their own related hotel csv
+        # 2) csv will get cleaned, analyzed and home page will read wtv yall need from examplehotelname_analyzedreviews_12-Oct.csv and examplehotelname_analyzedhotels_12-Oct.csv
+        # insert cleaning and analysis here
+        return redirect('/dashboard')
+
+    return render_template("new_upload.html")
 
 @app.route('/api/general')
 def summary():
