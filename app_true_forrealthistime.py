@@ -176,7 +176,7 @@ def navigation():
     return render_template('userDashboard copy.html',  histogram_heading=histogram_heading, histogram_div=histogram_div, 
                            wordcloud_heading = wordcloud_heading, hotelNames=hotel_name, 
                            pie_chart_div=pie_chart_div, scattermap=scattermap, img_data=img_data,
-                           provinces=provinces,map_div=map)
+                           provinces=provinces,map_div=map_div())
 
 @app.route('/api/general')
 def summary():
