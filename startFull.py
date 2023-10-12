@@ -1,4 +1,4 @@
-import dataClean,dataStandardization,dataAnalyze,timeAnalyze
+import dataClean,dataStandardization,dataAnalyze,timeAnalyze,dataScrape
 import time,traceback,globalVar,os,datetime
 
 def fullFlow():
@@ -13,7 +13,7 @@ def fullFlow():
     getCorrelations = True
 
     sTime = time.time() 
-    # dataScrape.dataScraper()
+    dataScrape.dataScraper()
     dataClean.dataCleaner(cin,cout)
     dataClean.dataCleaner(cdfin,cout)
     dataStandardization.handleMissingData(mdin,mdout)
