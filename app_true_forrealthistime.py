@@ -55,6 +55,26 @@ def bargraph():
     provinces = px.bar(count_province, x='province', y='Number of Hotels')
     return provinces.to_html()
 
+def map():
+    df['reviews.total'] = df['reviews.total'].astype(str)
+    # Merge the data based on 'Province' and calculate the total number of reviews
+    merged_data = gdf.merge(df, left_on='STUSPS', right_on='province', how='left')
+
+    # Normalize the data if needed
+    # Here, we are assuming you have a column 'Total Reviews' in your CSV data
+    # You may want to scale the data to fit the color scale properly
+
+    # Create a chloropleth map using Plotly Express
+    fig = px.choropleth(merged_data, 
+                        geojson=gdf.geometry, 
+                        locations=merged_data.index, 
+                        color='reviews.total',
+                        hover_name='STUSPS')
+
+    # Convert the map to HTML
+    map_div = fig.to_html(full_html=False)
+    return render_template('testfaz.html', map_div=map_div)
+
 bargraph()
 @app.route('/filtered_charts', methods=['GET','POST'])
 def filtered_charts():
@@ -119,7 +139,7 @@ def filtered_charts():
 @app.route('/', methods=['GET', 'POST'])
 def navigation():
     pie_chart_div = category_piechart()
-    #map_div = map()
+    map_div = map()
     histogram_heading = "Histogram"
     wordcloud_heading = "Word Cloud"
 
@@ -156,7 +176,7 @@ def navigation():
     return render_template('userDashboard copy.html',  histogram_heading=histogram_heading, histogram_div=histogram_div, 
                            wordcloud_heading = wordcloud_heading, hotelNames=hotel_name, 
                            pie_chart_div=pie_chart_div, scattermap=scattermap, img_data=img_data,
-                           provinces=provinces)
+                           provinces=provinces,map_div=map)
 
 @app.route('/api/general')
 def summary():
