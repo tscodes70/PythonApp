@@ -5,7 +5,7 @@ Created on Mon Oct  9 09:54:19 2023
 @author: Nisa
 """
 
-import csv
+import csv,os
 from selenium import webdriver
 import time, globalVar
 from selenium.webdriver.common.by import By
@@ -42,6 +42,7 @@ def get_prices(driver):
 
 def header_exists(file_path):
     try:
+        create_folder()
         try:
             with open(file_path, 'r', newline='') as csvfile:
                 csvreader = csv.reader(csvfile)
@@ -51,6 +52,12 @@ def header_exists(file_path):
             return False 
     except FileNotFoundError:
         return False
+
+def create_folder():
+    if not os.path.exists(globalVar.CSVD):
+        # If it doesn't exist, create the folder
+        os.mkdir(globalVar.CSVD)
+
 
 def get_reviews_data(driver, csvWriter):
     container = driver.find_elements(By.XPATH, "//div[@data-reviewid]")

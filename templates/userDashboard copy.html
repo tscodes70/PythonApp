@@ -168,18 +168,18 @@
               <div>{{ pie_chart_div|safe }}</div>
             </div>
             <div class="col">
-              <h3>Average Rating of the accomodations</h3>
-              <div>{{ histogram_div|safe }}</div>
+              <h3>Number of hotels per Provinces in USA</h3>
+              <div>{{ provinces|safe }}</div>
             </div>
           </div>
           <div class="row">
             <div class="col">
-              <h3>Correlation of Compound Sentiment to Average Rating</h3>
-              <div>{{ scattermap|safe }}</div>
+              <h3>Average Rating of the accomodations</h3>
+              <div>{{ histogram_div|safe }}</div>
             </div>
             <div class="col">
-              <h3>Number of hotels per Provinces in USA</h3>
-              <div>{{ provinces|safe }}</div>
+              <h3>Correlation of Compound Sentiment to Average Rating</h3>
+              <div>{{ scattermap|safe }}</div>
             </div>
           </div>
           <div class="row"> 
@@ -249,22 +249,90 @@
               <div class="col">
               </div>
             </div>
-            <!-- seperate 2 hotel stuff -->
+            <!-- Pie Chart Showing percentage of positive,negative,neutral reviews -->
+            <h4>{{ pcComparisonHeader }}</h4>
             <div class="row">
+              <!-- Hotel x piechart-->
               <div class="col">
-                hotel 1
+                hotel x
               </div>
+              <!-- All piechart-->
               <div class="col">
-                hotel 2
+                All hotels
+                <img src="data:image/png;base64,{{ img_data }}" alt="Word Cloud">
               </div>
             </div>
-            <!-- new row for insights and bs-->
+            <!-- Piechart insights-->
             <div class="row">
               <div class="col">
-                insights
+                Pie Chart compare
               </div>
             </div>
-            <!---->
+            <!--end of piechart-->
+
+            <!-- Review Rating Bar Chart -->
+            <h4>{{ rrComparisonHeader }}</h4>
+            <div class="row">
+              <!-- Hotel x rating of reviews -->
+              <div class="col">
+                hotel x
+              </div>
+              <!-- All average review rating -->
+              <div class="col">
+                All hotels
+                <img src="data:image/png;base64,{{ img_data }}" alt="Word Cloud">
+              </div>
+            </div>
+            <!-- Review Rating insights -->
+            <div class="row">
+              <div class="col">
+                Review Rating compare
+              </div>
+            </div>
+            <!--end of review rating-->
+
+            <!-- Word Cloud showing most discussed topics of reviews -->
+            <h4>{{ wcComparisonHeader }}</h4>  
+            <div class="row">
+              <!-- Hotel x wordcloud -->
+              <div class="col">
+                hotel x
+              </div>
+              <!-- All wordcloud -->
+              <div class="col">
+                All hotels
+                <img src="data:image/png;base64,{{ img_data }}" alt="Word Cloud">
+              </div>
+            </div>
+            <!-- Wordcloud insights -->
+            <div class="row">
+              <div class="col">
+                Word clouds are often used to quickly and intuitively visualize the most prominent words in a body of text, helping to identify key themes, terms, or patterns within the data.
+              </div>
+            </div>
+            <!--end of wordcloud-->
+
+            <!-- Amenities comparison, showing potential amenties to implement -->
+            <h4>{{ amComparisonHeader }}</h4>  
+            <div class="row">
+              <!-- Hotel x amenities -->
+              <div class="col">
+                hotel x
+              </div>
+              <!-- All amenties -->
+              <div class="col">
+                All hotels
+                <img src="data:image/png;base64,{{ img_data }}" alt="Word Cloud">
+              </div>
+            </div>
+            <!-- Amenties insights -->
+            <div class="row">
+              <div class="col">
+                you can implement xxx amenties
+              </div>
+            </div>
+            <!--end of amenities-->
+
           </div>
         </div>
 </div>

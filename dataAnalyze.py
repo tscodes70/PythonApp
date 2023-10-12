@@ -11,7 +11,7 @@ from nltk.tokenize import word_tokenize
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
-from heapq import nlargest
+from heapq import nlargest,nsmallest
 import globalVar,traceback
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 import time,ast
@@ -68,14 +68,14 @@ def getSummary(topConcatReview:str) -> str:
         length_penalty=2.0, 
         num_beams=4, 
         early_stopping=True)
-
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return (tokenizer.decode(outputs[0], skip_special_tokens=True)).capitalize()
 
 def analyzeIndividualReviews(processedData:pd.DataFrame) -> pd.DataFrame:
     """
     Analyzes individual reviews using VADER Sentiment Analysis then
     1. Summarizes top 2 hotel reviews.
-    2. Retrieves top 10 Keywords of hotel reviews
+    2. Summarizes worst 2 hotel reviews.
+    3. Retrieves top 10 Keywords of hotel reviews
 
     This function performs a analysis of individual hotel reviews by 
     calling the 'getSummary' function to summarize the top 2 hotel reviews and 
@@ -88,24 +88,26 @@ def analyzeIndividualReviews(processedData:pd.DataFrame) -> pd.DataFrame:
     Returns:
     processedData (pd.DataFrame): A Pandas Dataframe appended with data of Review Summary & Popular Keywords
     """
-    reviewSummaryOfHotel,keywordOfHotelReview = [],[]
+    goodSummaryOfHotel, badSummaryOfHotel, keywordsOfHotel = [],[],[]
     sia = SentimentIntensityAnalyzer()
-    for index, reviewsGroupedByHotel in enumerate(processedData[globalVar.REVIEWS_SUMMARY]):
+    for index, reviewsGroupedByHotel in enumerate(processedData[globalVar.REVIEWS_TEXT]):
         reviewListEachHotel = reviewsGroupedByHotel.split('<SPLIT>')
         # Sorting Reviews from best to worst
         rankedReviews = sorted(reviewListEachHotel, key=lambda x: sia.polarity_scores(x)['compound'], reverse=True)
-        # Retrieve top 4 reviews sorted by sentiment score
-        top_sentences = nlargest(globalVar.REVIEWSUMMAX, rankedReviews, key=lambda x: sia.polarity_scores(x)['compound'])
-
+        # Retrieve top 2 reviews sorted by sentiment score
+        best_sentences = nlargest(globalVar.REVIEWSUMMAX, rankedReviews, key=lambda x: sia.polarity_scores(x)['compound'])
+        # Retrieve worst 2 reviews sorted by sentiment score
+        worst_sentences = nsmallest(globalVar.REVIEWSUMMAX, rankedReviews, key=lambda x: sia.polarity_scores(x)['compound'])
         # Summarize the sorted reviews using transformer
-        reviewSummaryOfHotel.append(getSummary(" ".join(top_sentences)))
+        goodSummaryOfHotel.append(getSummary(" ".join(best_sentences)))
+        badSummaryOfHotel.append(getSummary(" ".join(worst_sentences)))
 
-        print(f"Processed {index + 1} hotels out of {len(processedData[globalVar.REVIEWS_SUMMARY])}")
+        print(f"Summary of {index + 1} hotels out of {len(processedData[globalVar.REVIEWS_TEXT])} generated")
 
     
-    keywordOfHotelReview = [getKeywords(item) for item in processedData[globalVar.REVIEWS_CLEANTEXT]]
+    keywordsOfHotel = [getKeywords(item) for item in processedData[globalVar.REVIEWS_CLEANTEXT]]
 
-    processedData[globalVar.POPULAR_KEYWORDS],processedData[globalVar.REVIEWS_SUMMARY] = keywordOfHotelReview,reviewSummaryOfHotel
+    processedData[globalVar.POPULAR_KEYWORDS],processedData[globalVar.GREVIEWS_SUMMARY],processedData[globalVar.BREVIEWS_SUMMARY] = keywordsOfHotel,goodSummaryOfHotel,badSummaryOfHotel
     return processedData
 
 def groupDataframe(processedData:pd.DataFrame,filter:list) -> pd.DataFrame:
@@ -155,7 +157,6 @@ def processDataFromCsv(cleanCsvFilename:str) -> pd.DataFrame:
     'prices': prices,
 
     'reviews.cleantext': reviews_cleantext,
-    'reviews.summary': reviews_summary,
     'average.rating': average_rating
     }
     with open(cleanCsvFilename, encoding=globalVar.ANALYSISENCODING) as f:
@@ -206,7 +207,6 @@ def initiateAnalysis(data:pd.DataFrame, OUTPUTREVIEWFULLFILE,OUTPUTHOTELFULLFILE
     # Export average compound analysis grouped by hotel
     hProcessedData = groupDataframe(gProcessedData.copy(),[globalVar.NAME, globalVar.PROVINCE, globalVar.POSTALCODE, globalVar.CATEGORIES, globalVar.PRIMARYCATEGORIES]).agg({
     globalVar.REVIEWS_TEXT: lambda x: '<SPLIT> '.join(x),
-    globalVar.REVIEWS_SUMMARY: lambda y: '<SPLIT> '.join(y),
     globalVar.REVIEWS_CLEANTEXT: lambda z: ' '.join(z),
     globalVar.AVERAGE_RATING: 'mean',
     globalVar.COMPOUND_SENTIMENT_SCORE: 'mean'

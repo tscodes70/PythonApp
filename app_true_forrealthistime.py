@@ -55,7 +55,6 @@ def bargraph():
     provinces = px.bar(count_province, x='province', y='Number of Hotels')
     return provinces.to_html()
 
-bargraph()
 @app.route('/filtered_charts', methods=['GET','POST'])
 def filtered_charts():
     pie_chart_div = category_piechart()
@@ -123,6 +122,12 @@ def navigation():
     histogram_heading = "Histogram"
     wordcloud_heading = "Word Cloud"
 
+    # Comparisons
+    pcComparisonHeader = "Pie Chart Comparison"
+    wcComparisonHeader = "Word Cloud Comparison"
+    rrComparisonHeader = "Review Rating Comparison"
+    amComparisonHeader = "Amenities Comparison"
+
     hotel_name = df['name'].unique()
     
     # Create a histogram figure using go.Figure
@@ -153,10 +158,19 @@ def navigation():
     scattermap = scatterplot()
     provinces = bargraph()
 
-    return render_template('userDashboard copy.html',  histogram_heading=histogram_heading, histogram_div=histogram_div, 
-                           wordcloud_heading = wordcloud_heading, hotelNames=hotel_name, 
-                           pie_chart_div=pie_chart_div, scattermap=scattermap, img_data=img_data,
-                           provinces=provinces)
+    return render_template('userDashboard copy.html',
+                           histogram_heading=histogram_heading, 
+                           histogram_div=histogram_div, 
+                           wordcloud_heading = wordcloud_heading, 
+                           hotelNames=hotel_name, 
+                           pie_chart_div=pie_chart_div, 
+                           scattermap=scattermap, 
+                           img_data=img_data,
+                           provinces=provinces, 
+                           pcComparisonHeader = pcComparisonHeader, 
+                           rrComparisonHeader = rrComparisonHeader, 
+                           wcComparisonHeader = wcComparisonHeader,
+                           amComparisonHeader = amComparisonHeader)
 
 @app.route('/api/general')
 def summary():
