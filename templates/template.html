@@ -18,18 +18,28 @@
     </header>
     <body>
         <header>
-            <nav>
-                <ul>
-                    <li><a href="/home">Home</a></li>
-                    <li><a href="/general">General</a></li>
-                    <li><a href="/comparison">Comparison</a></li>
-                    <li><a href="/summary">Summary</a></li>
-                    <li><a href="/">Upload New Dataset</a></li>
-                    <!-- Add more navigation items as needed -->
-                </ul>
-            </nav>
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                  <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                      <a class="nav-link" id="home" href="/home">Home</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" id="gene" href="/general">General Overview</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" id="comp" href="/comparison">Comparison</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="summ" href="/summary">Summary</a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link" href="/">Upload New Dataset</a>
+                      </li>
+                  </ul>
+                </div>
+              </nav>
         </header>
         {% block body %}{% endblock %}
-
     </body>
 </html>

@@ -144,9 +144,9 @@ def map():
     return map_div
 
 def getSentimentInsight(hotelname:str,specificList:list,allList:list):
-    background = ("Positive Sentiment: This category is used to describe customer reviews that express a favorable or optimistic attitude. It often indicates happiness, satisfaction, approval, or agreement.\n" +
-                  "Negative Sentiment: Negative sentiment represents customer reviews that convey a critical, unfavorable, or pessimistic attitude. It is typically associated with dissatisfaction, disapproval, or disagreement.\n" +
-                  "Neutral Sentiment: Neutral sentiment refers to customer reviews that do not express a strong positive or negative emotional tone. It often indicates a lack of strong emotion or a balanced viewpoint.")
+    background = ("<b>Positive Sentiment:</b> This category is used to describe customer reviews that express a favorable or optimistic attitude. It often indicates happiness, satisfaction, approval, or agreement.\n" +
+                  "<b>Negative Sentiment:</b> Negative sentiment represents customer reviews that convey a critical, unfavorable, or pessimistic attitude. It is typically associated with dissatisfaction, disapproval, or disagreement.\n" +
+                  "<b>Neutral Sentiment:</b> Neutral sentiment refers to customer reviews that do not express a strong positive or negative emotional tone. It often indicates a lack of strong emotion or a balanced viewpoint.")
     result = ""
     insight = ""
     # Hotel more positive sentiment than average
@@ -209,8 +209,8 @@ def getWordCloudInsight(hotelname:str,hotel_keywords:list,all_hotel_keywords:lis
     common_keywords = set(hotel_keywords).intersection(all_hotel_keywords)
     
     if common_keywords:
-        result = f"The word cloud for {hotelname} includes common topics discussed in customer reviews. These topics may include:\n"
-        result += ",".join(common_keywords)
+        result = f"The word cloud for {hotelname} includes common topics discussed in customer reviews.\nThese topics may include: "
+        result += ", ".join(common_keywords)
         insight = (f"{hotelname} shares common discussion topics with other hotels, which is a positive sign as" + 
                     " it is: \n" +
                     "1. Meeting Industry Standards\n" +
@@ -332,8 +332,8 @@ def homePage():
     dtHeader = "Sentiment Over Time"
     accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
     specific_sentiment_piechart,positiveSent,negativeSent,totalSent = sentimentPieChart(session['analyzed_reviews'])
-    specific_keywords_wordcloud = keywordsWordCloud(session['analyzed_hotels'])
-    specific_averagerating_histogram = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
+    specific_keywords_wordcloud,specific_wordcloud = keywordsWordCloud(session['analyzed_hotels'])
+    specific_averagerating_histogram,specific_averageRating = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
     sentiment_over_time_graph = sentimentOverTime(session['analyzed_reviews'])
 
     return render_template("home.html",
@@ -454,7 +454,7 @@ def keywordsWordCloudSpecific(csvFile, selector):
 @app.route('/general', methods=("POST", "GET"))
 def generalPage():
     # check if theres a POST request from dropdown list
-    hotel_name = df['name'].unique()
+    hotel_name = df[globalVar.NAME].unique()
     if request.method == 'POST':
         selected_hotel = request.form['hotelName-dropdown']
         
@@ -477,8 +477,8 @@ def generalPage():
     amHeader = "Amenities"
 
     all_sentiment_piechart = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
-    #all_keywords_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
-    all_averagerating_histogram = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.AVERAGE_RATING)
+    all_keywords_wordcloud,all_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+    all_averagerating_histogram,all_averageRating = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.AVERAGE_RATING)
 
     return render_template("general.html",
                            hotel_name=hotel_name,

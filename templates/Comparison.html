@@ -2,96 +2,104 @@
 
 {% block body %}
 <!-- Pie Chart Showing percentage of positive,negative,neutral reviews -->
-<h4>{{ pcComparisonHeader }}</h4>
-<div class="row">
+<div class="alert alert-success" role="alert">
+  <h4 class="alert-heading">{{ pcComparisonHeader }}</h4>
+  <p>{{sentbg | safe}}</p>
+  <hr>
+</div>
+<div class="row pt-3">
   <!-- Hotel x piechart-->
-  <div class="col">
-    <p>{{hotelname}}</p>
+  <div class="col d-flex flex-column align-items-center">
+    <h4>{{hotelname}}</h4>
     <div>{{ specific_sentiment_piechart|safe }}</div>
   </div>
   <!-- All piechart-->
-  <div class="col">
-    All hotels
+  <div class="col d-flex flex-column align-items-center">
+    <h4>All hotels</h4>
     <div>{{ all_sentiment_piechart|safe }}</div>
   </div>
 </div>
 <!-- Piechart insights-->
-<div class="row">
-  <div class="col">
-    <h3>==Background==</h3>
-    <p>{{sentbg | safe}}</p>
-    <h3>==Results==</h3>
-    <p>{{sentresult | safe}}</p>
-    <h3>==Insights==</h3>
-    <p>{{sentinsight | safe}}</p>
+<div class="card bg-light mb-3">
+  <h4 class="card-header">Analysis Insights</h4>
+  <div class="card-body">
+    <p class="card-text">{{sentresult | safe}}</p>
+    <p class="card-text">{{sentinsight | safe}}</p>
   </div>
 </div>
 <!--end of piechart-->
-<br><br><br>
+
 <!-- Review Rating Bar Chart -->
-<h4>{{ rrComparisonHeader }}</h4>
-<div class="row">
+<div class="alert alert-success mt-5" role="alert">
+  <h4 class="alert-heading">{{ rrComparisonHeader }}</h4>
+  <p>{{arbg | safe}}</p>
+  <hr>
+</div>
+<div class="row pt-3">
   <!-- Hotel x rating of reviews -->
-  <div class="col">
-    <p>{{hotelname}}</p>
+  <div class="col d-flex flex-column align-items-center">
+    <h4>{{hotelname}}</h4>
     <div>{{ specific_averagerating_histogram |safe }}</div>
   </div>
   <!-- All average review rating -->
-  <div class="col">
-    All hotels
+  <div class="col d-flex flex-column align-items-center">
+    <h4>All hotels</h4>
     <div>{{ all_averagerating_histogram|safe }}</div>
   </div>
 </div>
 <!-- Review Rating insights -->
-<div class="row">
-  <div class="col">
-    <h3>==Background==</h3>
-    <p>{{arbg | safe}}</p>
-    <h3>==Results==</h3>
-    <p>{{arresult | safe}}</p>
-    <h3>==Insights==</h3>
-    <p>{{arinsight | safe}}</p>
+<div class="card bg-light mb-3">
+  <h4 class="card-header">Analysis Insights</h4>
+  <div class="card-body">
+    <p class="card-text">{{arresult | safe}}</p>
+    <p class="card-text">{{arinsight | safe}}</p>
   </div>
 </div>
 <!--end of review rating-->
 
 <!-- Word Cloud showing most discussed topics of reviews -->
-<h4>{{ wcComparisonHeader }}</h4>  
-<div class="row">
+<div class="alert alert-success mt-5" role="alert">
+  <h4 class="alert-heading">{{ wcComparisonHeader }}</h4>
+  <p>{{wcbg | safe}}</p>
+  <hr>
+</div>
+<div class="row pt-3">
   <!-- Hotel x wordcloud -->
-  <div class="col">
-    hotel x
+  <div class="col d-flex flex-column align-items-center">
+    <h4>{{hotelname}}</h4>
     <img src="data:image/png;base64,{{ specific_keywords_wordcloud }}" alt="Word Cloud">
   </div>
   <!-- All wordcloud -->
-  <div class="col">
-    All hotels
+  <div class="col d-flex flex-column align-items-center">
+    <h4>All hotels</h4>
     <img src="data:image/png;base64,{{ all_keywords_wordcloud }}" alt="Word Cloud">
   </div>
 </div>
 <!-- Wordcloud insights -->
-<div class="row">
-  <div class="col">
-    <h3>==Background==</h3>
-    <p>{{wcbg | safe}}</p>
-    <h3>==Results==</h3>
-    <p>{{wcresult | safe}}</p>
-    <h3>==Insights==</h3>
-    <p>{{wcinsight | safe}}</p>
+<div class="card bg-light mb-3">
+  <h4 class="card-header">Analysis Insights</h4>
+  <div class="card-body">
+    <p class="card-text">{{wcresult | safe}}</p>
+    <p class="card-text">{{wcinsight | safe}}</p>
   </div>
 </div>
+
 <!--end of wordcloud-->
 
 <!-- Amenities comparison, showing potential amenties to implement -->
-<h4>{{ amComparisonHeader }}</h4>  
-<div class="row">
+<div class="alert alert-success mt-5" role="alert">
+  <h4 class="alert-heading">{{ amComparisonHeader }}</h4>
+  <!-- <p>{{wcbg | safe}}</p>   -->
+  <hr>
+</div>
+<div class="row pt-3">
   <!-- Hotel x amenities -->
-  <div class="col">
-    hotel x
+  <div class="col d-flex flex-column align-items-center">
+    <h4>{{hotelname}}</h4>
   </div>
   <!-- All amenties -->
-  <div class="col">
-    All hotels
+  <div class="col d-flex flex-column align-items-center">
+    <h4>All hotels</h4>
   </div>
 </div>
 <!-- Amenties insights -->
@@ -101,4 +109,4 @@
   </div>
 </div>
 <!--end of amenities-->
-{% endblock %}  
+{% endblock %}
