@@ -226,66 +226,6 @@ def getWordCloudInsight(hotelname:str,hotel_keywords:list,all_hotel_keywords:lis
         insight = f"{hotelname} may have unique features or aspects that are not commonly discussed in reviews."
     return background,result,insight
 
-@app.route('/filtered_charts', methods=['GET','POST'])
-def filtered_charts():
-    pie_chart_div = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
-    selected_hotel = request.form['hotelName-dropdown']
-
-    # histogram
-    #if selected_hotel:
-    #    histogram_filtered_data = df[df['name'] == selected_hotel]
-    #    histogram_data = histogram_filtered_data['average.rating'].astype(float)
-    #else:
-    histogram_data = df['average.rating'].astype(float)
-
-    # Create a histogram figure using go.Figure
-    histogram = go.Figure(data=[go.Histogram(x=histogram_data)])
-    histogram.update_layout(
-        title=f'Histogram of Average Rating',
-        xaxis_title='Average Rating',
-        yaxis_title='Count'
-    )
-    histogram_div = histogram.to_html()
-    
-    # wordcloud
-    hotel_name = df['name'].unique()
-    wordcloud_heading = "Word Cloud on the reviews for " + selected_hotel
-    histogram_heading = "Histogram on the ratings for " + selected_hotel
-
-    if selected_hotel:
-        wordcloud_filtered_data = df[df['name'] == selected_hotel]
-        wordcloud_data = ' '.join(wordcloud_filtered_data['reviews.summary'].astype(str))
-    else:
-        wordcloud_data = ' '.join(df['reviews.summary'].astype(str))
-
-    # Generate the word cloud
-    wordcloud = WordCloud(width=800, height=400)
-    wordcloud.generate(wordcloud_data)
-    plt.figure(figsize=(8, 4))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    img_buffer = BytesIO()
-    plt.axis('off')
-    plt.savefig(img_buffer, format='png')
-    img_buffer.seek(0)
-    img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
-
-    hotel_details = []
-    #get hotel values for display
-    if selected_hotel:
-        hotel_details = get_hotel_details(selected_hotel)
-
-    # set selected_hotel to 'All' for presentation
-    if not selected_hotel:
-        selected_hotel = 'All hotels'
-    
-    scattermap = scatterplot()
-    provinces = provinceHistogram()
-
-    return render_template('userDashboard copy.html', img_data=img_data, hotelNames= hotel_name, 
-                           histogram_heading=histogram_heading,wordcloud_heading=wordcloud_heading, 
-                           histogram_div=histogram_div, hotelName=selected_hotel, pie_chart_div=pie_chart_div,
-                           hotel_details=hotel_details, scattermap=scattermap, provinces=provinces)
-
 @app.route('/', methods=['GET','POST'])
 def upload():
     try:
