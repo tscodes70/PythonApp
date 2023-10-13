@@ -37,6 +37,15 @@ def get_hotel_details(s):
     filter = df[df['name'] == s]
     return (filter.values).tolist()
 
+def averageSentimentOverTime(csvFile):
+    df = pd.read_csv(csvFile)
+    df = df.sort_values(by=globalVar.REVIEWS_DATE)
+    df = df.groupby(globalVar.REVIEWS_DATE)[globalVar.COMPOUND_SENTIMENT_SCORE].mean()\
+        .reset_index(name=globalVar.COMPOUND_SENTIMENT_SCORE)  
+    fig = go.Figure([go.Scatter(x=df[globalVar.REVIEWS_DATE], y=df[globalVar.COMPOUND_SENTIMENT_SCORE])])
+    fig.update_layout(yaxis_range=[-1,1])
+    return fig.to_html()
+
 # Charts
 def sentimentPieChart(csvFile):
     df = pd.read_csv(csvFile)
@@ -78,7 +87,7 @@ def keywordsWordCloud(csvFile):
             else:
                 word_freq[word] = int(freq)
 
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_freq)
+    wordcloud = WordCloud(width=800, height=400, background_color='black').generate_from_frequencies(word_freq)
     plt.figure(figsize=(8, 4))
     plt.imshow(wordcloud, interpolation='bilinear')
     img_buffer = BytesIO()
@@ -87,6 +96,29 @@ def keywordsWordCloud(csvFile):
     img_buffer.seek(0)
     wordcloud = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
     return wordcloud,word_freq
+
+def amenitiesWordCloud(csvFile):
+    df = pd.read_csv(csvFile)
+    amenities_dict = {}
+    amenities = df[globalVar.AMENITIES].tolist()
+    for hotelamenities in amenities:
+        amenity_list = ast.literal_eval(hotelamenities)
+        for amenity in amenity_list:
+            if amenity in amenities_dict:
+                amenities_dict[amenity] += 1
+            else:
+                amenities_dict[amenity] = 1
+    wordcloud = WordCloud(width=800, height=400, background_color='black').generate_from_frequencies(amenities_dict)
+    plt.figure(figsize=(8, 4))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    img_buffer = BytesIO()
+    plt.axis('off')
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    wordcloud = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+
+    return wordcloud, amenities_dict
+
 
 def averageRatingHistogram(csvFile,dfHeader):
     df = pd.read_csv(csvFile)
@@ -213,69 +245,35 @@ def getWordCloudInsight(hotelname:str,hotel_keywords:list,all_hotel_keywords:lis
                     "1. Meeting Industry Standards\n" +
                     "2. Consistent with competitors")
     else:
-        result = f"The word cloud for {hotelname} does not include common topics discussed in customer reviews. This may indicate unique aspects."
-        insight = f"{hotelname} may have unique features or aspects that are not commonly discussed in reviews."
+        result = f"The word cloud for {hotelname} does not include common topics discussed in customer reviews."
+        insight = (f"{hotelname} may have unique features or aspects that are not commonly discussed in reviews.\n " +
+                f"Improvement can be considered in these areas: {all_hotel_keywords[:10]}")
     return background,result,insight
 
-@app.route('/filtered_charts', methods=['GET','POST'])
-def filtered_charts():
-    pie_chart_div = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
-    selected_hotel = request.form['hotelName-dropdown']
+def getAmenitiesInsight(hotelname:str,hotel_amenities:dict,all_amenities:dict):
+    background = ("A Wordcloud shows the most discussed topics of customers through their reviews")
+    result = ""
+    insight = ""
+    all_amenities_sorted = dict(sorted(all_amenities.items(), key=lambda item: item[1], reverse=True))
+    top10_amenities = list(all_amenities_sorted.keys())[:10]
+    hotel_amenity = list(hotel_amenities.keys())[:10]
+    # Compare the hotel's amenities with top 10 most sought after amenities
+    implemented_amenities = set(hotel_amenity).intersection(top10_amenities)
+    unimplemented_amenities = [amenity for amenity in hotel_amenity if amenity not in top10_amenities]
 
-    # histogram
-    #if selected_hotel:
-    #    histogram_filtered_data = df[df['name'] == selected_hotel]
-    #    histogram_data = histogram_filtered_data['average.rating'].astype(float)
-    #else:
-    histogram_data = df['average.rating'].astype(float)
-
-    # Create a histogram figure using go.Figure
-    histogram = go.Figure(data=[go.Histogram(x=histogram_data)])
-    histogram.update_layout(
-        title=f'Histogram of Average Rating',
-        xaxis_title='Average Rating',
-        yaxis_title='Count'
-    )
-    histogram_div = histogram.to_html()
     
-    # wordcloud
-    hotel_name = df['name'].unique()
-    wordcloud_heading = "Word Cloud on the reviews for " + selected_hotel
-    histogram_heading = "Histogram on the ratings for " + selected_hotel
-
-    if selected_hotel:
-        wordcloud_filtered_data = df[df['name'] == selected_hotel]
-        wordcloud_data = ' '.join(wordcloud_filtered_data['reviews.summary'].astype(str))
+    if implemented_amenities:
+        result = f"The word cloud for {hotelname} includes common amenities implemented by other hotels.\nThese amenities include: "
+        result += ", ".join(implemented_amenities)
+        insight = (f"{hotelname} shares common amenities implemented by other hotels, which is a positive sign.\nHowever these amenities" + 
+                    "can be considered: \n")
+        insight += ", ".join(unimplemented_amenities)
     else:
-        wordcloud_data = ' '.join(df['reviews.summary'].astype(str))
+        result = f"The word cloud for {hotelname} does not include common amenities implemented by other hotels, which implies there is much room for improvement."
+        insight = f"{hotelname} may have to consider implementing these amenities to compete against competitor hotels:\n"
+        insight += ", ".join(unimplemented_amenities)
+    return background,result,insight
 
-    # Generate the word cloud
-    wordcloud = WordCloud(width=800, height=400)
-    wordcloud.generate(wordcloud_data)
-    plt.figure(figsize=(8, 4))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    img_buffer = BytesIO()
-    plt.axis('off')
-    plt.savefig(img_buffer, format='png')
-    img_buffer.seek(0)
-    img_data = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
-
-    hotel_details = []
-    #get hotel values for display
-    if selected_hotel:
-        hotel_details = get_hotel_details(selected_hotel)
-
-    # set selected_hotel to 'All' for presentation
-    if not selected_hotel:
-        selected_hotel = 'All hotels'
-    
-    scattermap = scatterplot()
-    provinces = provinceHistogram()
-
-    return render_template('userDashboard copy.html', img_data=img_data, hotelNames= hotel_name, 
-                           histogram_heading=histogram_heading,wordcloud_heading=wordcloud_heading, 
-                           histogram_div=histogram_div, hotelName=selected_hotel, pie_chart_div=pie_chart_div,
-                           hotel_details=hotel_details, scattermap=scattermap, provinces=provinces)
 
 @app.route('/', methods=['GET','POST'])
 def upload():
@@ -313,10 +311,14 @@ def summary():
      jsonfile = dfc.to_json(orient='table')
      return jsonfile
 
-def sentimentOverTime(csvFile):
+def averageSentimentOverTime(csvFile):
     df = pd.read_csv(csvFile)
     df = df.sort_values(by=globalVar.REVIEWS_DATE)
+    df = df.groupby(globalVar.REVIEWS_DATE)[globalVar.COMPOUND_SENTIMENT_SCORE].mean()\
+        .reset_index(name=globalVar.COMPOUND_SENTIMENT_SCORE)  
     fig = go.Figure([go.Scatter(x=df[globalVar.REVIEWS_DATE], y=df[globalVar.COMPOUND_SENTIMENT_SCORE])])
+    fig.update_layout(yaxis_range=[-1,1])
+    #fig = px.histogram(df, x=df[globalVar.REVIEWS_DATE], y=df[globalVar.COMPOUND_SENTIMENT_SCORE], histfunc='avg')
     return fig.to_html()
 
 @app.route('/home', methods=("POST", "GET"))
@@ -327,25 +329,25 @@ def homePage():
     rrHeader = "Review Rating"
     wcHeader = "Word Cloud"
     amHeader = "Amenities"
-    dtHeader = "Sentiment Over Time"
+    asHeader = "Sentiment Over Time"
     accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
     specific_sentiment_piechart,positiveSent,negativeSent,totalSent = sentimentPieChart(session['analyzed_reviews'])
     specific_keywords_wordcloud,specific_wordcloud = keywordsWordCloud(session['analyzed_hotels'])
     specific_averagerating_histogram,specific_averageRating = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
-    sentiment_over_time_graph = sentimentOverTime(session['analyzed_reviews'])
+    average_sentiment_over_time_graph = averageSentimentOverTime(session['analyzed_reviews'])
 
     return render_template("home.html",
                            pcHeader=pcHeader,
                            rrHeader=rrHeader, 
                            wcHeader=wcHeader,
                            amHeader=amHeader,
-                           dtHeader=dtHeader,
+                           asHeader=asHeader,
                            accomo_piechart = accomo_piechart,
                            specific_sentiment_piechart = specific_sentiment_piechart,
                            specific_keywords_wordcloud = specific_keywords_wordcloud,
                            specific_averagerating_histogram = specific_averagerating_histogram,
                            main_hotel_details=main_hotel_details,
-                           sentiment_over_time_graph = sentiment_over_time_graph)
+                           average_sentiment_over_time_graph = average_sentiment_over_time_graph)
 
 @app.route('/comparison', methods=("POST", "GET"))
 def comparisonPage():
@@ -386,11 +388,18 @@ def comparisonPage():
 
     all_averagerating_histogram,all_averageRating = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.AVERAGE_RATING)
     specific_averagerating_histogram,specific_averageRating = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
-
     arbg,arresult,arinsight=getReviewRatingInsight(hotelname,specific_averageRating,all_averageRating)
     arbg = arbg.replace('\n', '<br>')
     arresult = arresult.replace('\n', '<br>')
     arinsight = arinsight.replace('\n', '<br>')
+
+    all_amenities_wordcloud,all_amenities = amenitiesWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+    specific_amenities_wordcloud,specific_amenities = amenitiesWordCloud(session['analyzed_hotels'])
+    awcbg,awcresult,awcinsight=getAmenitiesInsight(hotelname,specific_amenities,all_amenities)
+    awcbg = awcbg.replace('\n', '<br>')
+    awcresult = awcresult.replace('\n', '<br>')
+    awcinsight = awcinsight.replace('\n', '<br>')
+
 
     return render_template("comparison.html",
                            pcHeader=pcHeader,
@@ -403,13 +412,18 @@ def comparisonPage():
                            arbg=arbg,
                            arresult=arresult,
                            arinsight=arinsight,
+                           awcbg=awcbg,
+                           awcresult=awcresult,
+                           awcinsight=awcinsight,
                            wcbg=wcbg,
                            wcresult=wcresult,
                            wcinsight=wcinsight,
                            accomo_piechart = accomo_piechart,
                            hotelname=hotelname, 
                            scattermap=scattermap, 
-                           provinces=provinces, 
+                           provinces=provinces,
+                           all_amenities_wordcloud = all_amenities_wordcloud,
+                           specific_amenities_wordcloud = specific_amenities_wordcloud,
                            all_sentiment_piechart = all_sentiment_piechart,
                            specific_sentiment_piechart = specific_sentiment_piechart,
                            all_keywords_wordcloud = all_keywords_wordcloud,
@@ -453,16 +467,17 @@ def keywordsWordCloudSpecific(csvFile, selector):
 def generalPage():
     # check if theres a POST request from dropdown list
     hotel_name = df[globalVar.NAME].unique()
+    all_keywords_wordcloud = ''
     if request.method == 'POST':
         selected_hotel = request.form['hotelName-dropdown']
         
         if selected_hotel:
             all_keywords_wordcloud = keywordsWordCloudSpecific(globalVar.ANALYSISHOTELOUTPUTFULLFILE, selected_hotel)
         else:
-            all_keywords_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+            all_keywords_wordcloud,all_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
     else:
         selected_hotel = ''
-        all_keywords_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+        all_keywords_wordcloud,all_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
         
     map_div = map()
     scattermap = scatterplot()
@@ -475,7 +490,6 @@ def generalPage():
     amHeader = "Amenities"
 
     all_sentiment_piechart = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
-    all_keywords_wordcloud,all_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
     all_averagerating_histogram,all_averageRating = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.AVERAGE_RATING)
 
     return render_template("general.html",

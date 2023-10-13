@@ -207,14 +207,8 @@ def dataCleaning(scrapeDataframe: pd.DataFrame):
         lambda x: emoji_pattern.sub(r'', x))
     # Remove additonal stopwords
     scrapeDataframe['reviews.cleantext'] = scrapeDataframe['reviews.cleantext'].apply(process_review)
-
-    # scrapeDataframe['reviews.title'] = scrapeDataframe['reviews.title'].apply(lambda x: emoji_pattern.sub(r'', x))
-    # scrapeDataframe['reviews.text'] = scrapeDataframe['reviews.text'].apply(lambda x: emoji_pattern.sub(r'', x))
-
+    
     scrapeDataframe.dropna(subset=['reviews.cleantext'], inplace=True)
-
-    # Keep rows with English sentences
-    # scrapeDataframe = scrapeDataframe[scrapeDataframe['reviews.title'].apply(is_english)]
 
     # Apply the clean_amenities function to the 'amenities' column
     try:
