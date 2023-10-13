@@ -225,6 +225,8 @@ def handleMissingData(INPUTCLEANFULLFILE,OUTPUTMDFULLFILE):
 
     fdf = predictiveModelling(pdf)
     newfdf = fdf[[globalVar.POSTALCODE,globalVar.AMENITIES]]
-    df.update(newfdf)
+    amenities_mapping = newfdf.set_index(globalVar.POSTALCODE)[globalVar.AMENITIES].to_dict()
+
+    df[globalVar.AMENITIES] = df[globalVar.POSTALCODE].map(amenities_mapping)
     df[globalVar.PRICES] = df[globalVar.PRICES].replace('', 0)
     df.to_csv(OUTPUTMDFULLFILE)
