@@ -87,7 +87,7 @@ def keywordsWordCloud(csvFile):
             else:
                 word_freq[word] = int(freq)
 
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_freq)
+    wordcloud = WordCloud(width=800, height=400, background_color='black').generate_from_frequencies(word_freq)
     plt.figure(figsize=(8, 4))
     plt.imshow(wordcloud, interpolation='bilinear')
     img_buffer = BytesIO()
@@ -96,6 +96,29 @@ def keywordsWordCloud(csvFile):
     img_buffer.seek(0)
     wordcloud = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
     return wordcloud,word_freq
+
+def amenitiesWordCloud(csvFile):
+    df = pd.read_csv(csvFile)
+    amenities_dict = {}
+    amenities = df[globalVar.AMENITIES].tolist()
+    for hotelamenities in amenities:
+        amenity_list = ast.literal_eval(hotelamenities)
+        for amenity in amenity_list:
+            if amenity in amenities_dict:
+                amenities_dict[amenity] += 1
+            else:
+                amenities_dict[amenity] = 1
+    wordcloud = WordCloud(width=800, height=400, background_color='black').generate_from_frequencies(amenities_dict)
+    plt.figure(figsize=(8, 4))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    img_buffer = BytesIO()
+    plt.axis('off')
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    wordcloud = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+
+    return wordcloud, amenities_dict
+
 
 def averageRatingHistogram(csvFile,dfHeader):
     df = pd.read_csv(csvFile)
@@ -222,9 +245,35 @@ def getWordCloudInsight(hotelname:str,hotel_keywords:list,all_hotel_keywords:lis
                     "1. Meeting Industry Standards\n" +
                     "2. Consistent with competitors")
     else:
-        result = f"The word cloud for {hotelname} does not include common topics discussed in customer reviews. This may indicate unique aspects."
-        insight = f"{hotelname} may have unique features or aspects that are not commonly discussed in reviews."
+        result = f"The word cloud for {hotelname} does not include common topics discussed in customer reviews."
+        insight = (f"{hotelname} may have unique features or aspects that are not commonly discussed in reviews.\n " +
+                f"Improvement can be considered in these areas: {all_hotel_keywords[:10]}")
     return background,result,insight
+
+def getAmenitiesInsight(hotelname:str,hotel_amenities:dict,all_amenities:dict):
+    background = ("A Wordcloud shows the most discussed topics of customers through their reviews")
+    result = ""
+    insight = ""
+    all_amenities_sorted = dict(sorted(all_amenities.items(), key=lambda item: item[1], reverse=True))
+    top10_amenities = list(all_amenities_sorted.keys())[:10]
+    hotel_amenity = list(hotel_amenities.keys())[:10]
+    # Compare the hotel's amenities with top 10 most sought after amenities
+    implemented_amenities = set(hotel_amenity).intersection(top10_amenities)
+    unimplemented_amenities = [amenity for amenity in hotel_amenity if amenity not in top10_amenities]
+
+    
+    if implemented_amenities:
+        result = f"The word cloud for {hotelname} includes common amenities implemented by other hotels.\nThese amenities include: "
+        result += ", ".join(implemented_amenities)
+        insight = (f"{hotelname} shares common amenities implemented by other hotels, which is a positive sign.\nHowever these amenities" + 
+                    "can be considered: \n")
+        insight += ", ".join(unimplemented_amenities)
+    else:
+        result = f"The word cloud for {hotelname} does not include common amenities implemented by other hotels, which implies there is much room for improvement."
+        insight = f"{hotelname} may have to consider implementing these amenities to compete against competitor hotels:\n"
+        insight += ", ".join(unimplemented_amenities)
+    return background,result,insight
+
 
 @app.route('/', methods=['GET','POST'])
 def upload():
@@ -339,11 +388,18 @@ def comparisonPage():
 
     all_averagerating_histogram,all_averageRating = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.AVERAGE_RATING)
     specific_averagerating_histogram,specific_averageRating = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
-
     arbg,arresult,arinsight=getReviewRatingInsight(hotelname,specific_averageRating,all_averageRating)
     arbg = arbg.replace('\n', '<br>')
     arresult = arresult.replace('\n', '<br>')
     arinsight = arinsight.replace('\n', '<br>')
+
+    all_amenities_wordcloud,all_amenities = amenitiesWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+    specific_amenities_wordcloud,specific_amenities = amenitiesWordCloud(session['analyzed_hotels'])
+    awcbg,awcresult,awcinsight=getAmenitiesInsight(hotelname,specific_amenities,all_amenities)
+    awcbg = awcbg.replace('\n', '<br>')
+    awcresult = awcresult.replace('\n', '<br>')
+    awcinsight = awcinsight.replace('\n', '<br>')
+
 
     return render_template("comparison.html",
                            pcHeader=pcHeader,
@@ -356,13 +412,18 @@ def comparisonPage():
                            arbg=arbg,
                            arresult=arresult,
                            arinsight=arinsight,
+                           awcbg=awcbg,
+                           awcresult=awcresult,
+                           awcinsight=awcinsight,
                            wcbg=wcbg,
                            wcresult=wcresult,
                            wcinsight=wcinsight,
                            accomo_piechart = accomo_piechart,
                            hotelname=hotelname, 
                            scattermap=scattermap, 
-                           provinces=provinces, 
+                           provinces=provinces,
+                           all_amenities_wordcloud = all_amenities_wordcloud,
+                           specific_amenities_wordcloud = specific_amenities_wordcloud,
                            all_sentiment_piechart = all_sentiment_piechart,
                            specific_sentiment_piechart = specific_sentiment_piechart,
                            all_keywords_wordcloud = all_keywords_wordcloud,

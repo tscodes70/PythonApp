@@ -1,8 +1,9 @@
-import dataClean,dataStandardization,dataAnalyze,timeAnalyze,dataScrape
+import dataAnalyze,timeAnalyze,dataClean,dataStandardization
 import time,traceback,globalVar,os,datetime
 
 def fullFlow():
-    cin = globalVar.CLEANERINPUTFULLFILE
+    # cin = globalVar.CLEANERINPUTFULLFILE
+    cin = os.path.join(globalVar.CSVD,"florentine.csv")
     cdfin = globalVar.CLEANERCUSTOMFULLFILE
     cout = globalVar.CLEANEROUTPUTFULLFILE
     mdin = globalVar.MDINPUTFULLFILE
@@ -13,9 +14,9 @@ def fullFlow():
     getCorrelations = True
 
     sTime = time.time() 
-    dataScrape.dataScraper()
+    # dataScrape.dataScraper()
     dataClean.dataCleaner(cin,cout)
-    dataClean.dataCleaner(cdfin,cout)
+    # dataClean.dataCleaner(cdfin,cout)
     dataStandardization.handleMissingData(mdin,mdout)
     dataAnalyze.dataAnalysis(ain,arout,ahout,getCorrelations)
     timeAnalyze.timeAnalysis()
