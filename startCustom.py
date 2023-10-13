@@ -1,16 +1,13 @@
 import dataClean,dataStandardization,dataAnalyze
 import time,traceback,globalVar,os,datetime
 
-def customFileMain():
+def customFileMain(hoteldata:str):
     sTime = time.time()
-    currentdate = datetime.date.today().strftime("%d-%b")
-    hotelname = "yotel"
-
-    hoteldata = "yotel_hotel_test.csv"
-    hotelclean = f"{hotelname}_clean_{currentdate}.csv"
-    hotelmd = f"{hotelname}_md_{currentdate}.csv"
-    hotelar = f"{hotelname}_analyzedreviews_{currentdate}.csv"
-    hotelah = f"{hotelname}_analyzedhotels_{currentdate}.csv"
+    hotelfile = hoteldata[:-4]
+    hotelclean = f"{hotelfile}_clean.csv"
+    hotelmd = f"{hotelfile}_md.csv"
+    hotelar = f"{hotelfile}_analyzedreviews.csv"
+    hotelah = f"{hotelfile}_analyzedhotels.csv"
 
         
     fullhoteldata = os.path.join(globalVar.CSVD,hoteldata)
@@ -29,9 +26,3 @@ def customFileMain():
     print(f"======= Runtime Information =======")
     print(f"Runtime: {runtime} seconds")
     print(f"===================================")
-
-try:
-    customFileMain()
-
-except:
-    traceback.print_exc() 

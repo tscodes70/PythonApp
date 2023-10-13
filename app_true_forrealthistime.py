@@ -18,14 +18,11 @@ import geopandas as gpd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import geopandas as gpd
 import globalVar,ast
+from startCustom import customFileMain
 
 app = Flask(__name__)
 Bootstrap(app)
 app.secret_key = 'This is your secret key to utilize session in Flask'
-
-# allow upload to csvs folder
-UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../csvs/'))
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # takes data from analysedhotel-DATE.csv and loads it into a pandas dataframe
 fileread = os.path.join(globalVar.CSVD,globalVar.ANALYSISHOTELOUTPUTFULLFILE)
@@ -282,30 +279,31 @@ def filtered_charts():
 
 @app.route('/', methods=['GET','POST'])
 def upload():
-    if request.method == 'POST':
-	    #check if POST request has file
-        if 'file' not in request.files:
-            flash('Invalid file upload')
-            return redirect('upload.html')
-        # get file from POST
-        f = request.files.get('file')
-        filename = secure_filename(f.filename)
-        f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        #save the stuff and redirect to dashboard and save the file path to session for reading
-        session['uploaded_data_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'],
-					filename)
-        
-        # 1) user will upload their own related hotel csv
-        # 2) csv will get cleaned, analyzed and home page will read wtv yall need from examplehotelname_analyzedreviews_12-Oct.csv and examplehotelname_analyzedhotels_12-Oct.csv
-        # insert cleaning and analysis here
+    try:
+        if request.method == 'POST':
+            #check if POST request has file
+            if 'file' not in request.files:
+                flash('Invalid file upload')
+                return redirect('upload.html')
+            # get file from POST
+            f = request.files.get('file')
+            filename = secure_filename(f.filename)
+            f.save(os.path.join(globalVar.CSVD, filename))
 
-        
-        #Session stuff 
-        session['analyzed_hotels'] = os.path.join(app.config['UPLOAD_FOLDER'],"yotel_analyzedhotels_13-Oct.csv")
-        session['analyzed_reviews'] = os.path.join(app.config['UPLOAD_FOLDER'],"yotel_analyzedreviews_13-Oct.csv")
+            # 1) user will upload their own related hotel csv
+            session['hotel_file'] = os.path.join(globalVar.CSVD,filename)
+            # 2) csv will get cleaned, analyzed and home page will read wtv yall need from examplehotelname_analyzedreviews_12-Oct.csv and examplehotelname_analyzedhotels_12-Oct.csv
+            hoteldata = filename[:-4]
+            # insert cleaning and analysis here
+            customFileMain(filename)
+            
+            #Session stuff 
+            session['analyzed_hotels'] = os.path.join(globalVar.CSVD,f"{hoteldata}_analyzedhotels.csv")
+            session['analyzed_reviews'] = os.path.join(globalVar.CSVD,f"{hoteldata}_analyzedreviews.csv")
 
-        return redirect('/home')
-
+            return redirect('/home')
+    except Exception:
+        print("error")
     return render_template("upload.html")
 
 @app.route('/api/general')
