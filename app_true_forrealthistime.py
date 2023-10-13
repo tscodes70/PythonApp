@@ -37,6 +37,15 @@ def get_hotel_details(s):
     filter = df[df['name'] == s]
     return (filter.values).tolist()
 
+def averageSentimentOverTime(csvFile):
+    df = pd.read_csv(csvFile)
+    df = df.sort_values(by=globalVar.REVIEWS_DATE)
+    df = df.groupby(globalVar.REVIEWS_DATE)[globalVar.COMPOUND_SENTIMENT_SCORE].mean()\
+        .reset_index(name=globalVar.COMPOUND_SENTIMENT_SCORE)  
+    fig = go.Figure([go.Scatter(x=df[globalVar.REVIEWS_DATE], y=df[globalVar.COMPOUND_SENTIMENT_SCORE])])
+    fig.update_layout(yaxis_range=[-1,1])
+    return fig.to_html()
+
 # Charts
 def sentimentPieChart(csvFile):
     df = pd.read_csv(csvFile)
@@ -332,7 +341,7 @@ def homePage():
     specific_sentiment_piechart,positiveSent,negativeSent,totalSent = sentimentPieChart(session['analyzed_reviews'])
     specific_keywords_wordcloud,specific_wordcloud = keywordsWordCloud(session['analyzed_hotels'])
     specific_averagerating_histogram,specific_averageRating = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
-    sentiment_over_time_graph = sentimentOverTime(session['analyzed_reviews'])
+    average_sentiment_over_time_graph = averageSentimentOverTime(session['analyzed_reviews'])
 
     return render_template("home.html",
                            pcHeader=pcHeader,
@@ -345,7 +354,7 @@ def homePage():
                            specific_keywords_wordcloud = specific_keywords_wordcloud,
                            specific_averagerating_histogram = specific_averagerating_histogram,
                            main_hotel_details=main_hotel_details,
-                           sentiment_over_time_graph = sentiment_over_time_graph)
+                           sentiment_over_time_graph = average_sentiment_over_time_graph)
 
 @app.route('/comparison', methods=("POST", "GET"))
 def comparisonPage():
