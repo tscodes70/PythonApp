@@ -322,10 +322,14 @@ def summary():
      jsonfile = dfc.to_json(orient='table')
      return jsonfile
 
-def sentimentOverTime(csvFile):
+def averageSentimentOverTime(csvFile):
     df = pd.read_csv(csvFile)
     df = df.sort_values(by=globalVar.REVIEWS_DATE)
+    df = df.groupby(globalVar.REVIEWS_DATE)[globalVar.COMPOUND_SENTIMENT_SCORE].mean()\
+        .reset_index(name=globalVar.COMPOUND_SENTIMENT_SCORE)  
     fig = go.Figure([go.Scatter(x=df[globalVar.REVIEWS_DATE], y=df[globalVar.COMPOUND_SENTIMENT_SCORE])])
+    fig.update_layout(yaxis_range=[-1,1])
+    #fig = px.histogram(df, x=df[globalVar.REVIEWS_DATE], y=df[globalVar.COMPOUND_SENTIMENT_SCORE], histfunc='avg')
     return fig.to_html()
 
 @app.route('/home', methods=("POST", "GET"))
@@ -336,7 +340,7 @@ def homePage():
     rrHeader = "Review Rating"
     wcHeader = "Word Cloud"
     amHeader = "Amenities"
-    dtHeader = "Sentiment Over Time"
+    asHeader = "Sentiment Over Time"
     accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
     specific_sentiment_piechart,positiveSent,negativeSent,totalSent = sentimentPieChart(session['analyzed_reviews'])
     specific_keywords_wordcloud,specific_wordcloud = keywordsWordCloud(session['analyzed_hotels'])
@@ -348,13 +352,13 @@ def homePage():
                            rrHeader=rrHeader, 
                            wcHeader=wcHeader,
                            amHeader=amHeader,
-                           dtHeader=dtHeader,
+                           asHeader=asHeader,
                            accomo_piechart = accomo_piechart,
                            specific_sentiment_piechart = specific_sentiment_piechart,
                            specific_keywords_wordcloud = specific_keywords_wordcloud,
                            specific_averagerating_histogram = specific_averagerating_histogram,
                            main_hotel_details=main_hotel_details,
-                           sentiment_over_time_graph = average_sentiment_over_time_graph)
+                           average_sentiment_over_time_graph = average_sentiment_over_time_graph)
 
 @app.route('/comparison', methods=("POST", "GET"))
 def comparisonPage():
@@ -462,16 +466,17 @@ def keywordsWordCloudSpecific(csvFile, selector):
 def generalPage():
     # check if theres a POST request from dropdown list
     hotel_name = df[globalVar.NAME].unique()
+    all_keywords_wordcloud = ''
     if request.method == 'POST':
         selected_hotel = request.form['hotelName-dropdown']
         
         if selected_hotel:
             all_keywords_wordcloud = keywordsWordCloudSpecific(globalVar.ANALYSISHOTELOUTPUTFULLFILE, selected_hotel)
         else:
-            all_keywords_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+            all_keywords_wordcloud,all_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
     else:
         selected_hotel = ''
-        all_keywords_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+        all_keywords_wordcloud,all_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
         
     map_div = map()
     scattermap = scatterplot()
@@ -484,7 +489,6 @@ def generalPage():
     amHeader = "Amenities"
 
     all_sentiment_piechart = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
-    all_keywords_wordcloud,all_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
     all_averagerating_histogram,all_averageRating = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.AVERAGE_RATING)
 
     return render_template("general.html",
