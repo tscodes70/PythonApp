@@ -67,12 +67,12 @@
   <!-- Hotel x wordcloud -->
   <div class="col d-flex flex-column align-items-center">
     <h4>{{hotelname}}</h4>
-    <img src="data:image/png;base64,{{ specific_keywords_wordcloud }}" alt="Word Cloud">
+    <img src="data:image/png;base64,{{ specific_keywords_wordcloud }}" alt="Keywords Word Cloud">
   </div>
   <!-- All wordcloud -->
   <div class="col d-flex flex-column align-items-center">
     <h4>All hotels</h4>
-    <img src="data:image/png;base64,{{ all_keywords_wordcloud }}" alt="Word Cloud">
+    <img src="data:image/png;base64,{{ all_keywords_wordcloud }}" alt="Keywords Word Cloud">
   </div>
 </div>
 <!-- Wordcloud insights -->
@@ -89,23 +89,27 @@
 <!-- Amenities comparison, showing potential amenties to implement -->
 <div class="alert alert-success mt-5" role="alert">
   <h4 class="alert-heading">{{ amComparisonHeader }}</h4>
-  <!-- <p>{{wcbg | safe}}</p>   -->
+  <p>{{awcbg | safe}}</p>
   <hr>
 </div>
 <div class="row pt-3">
   <!-- Hotel x amenities -->
   <div class="col d-flex flex-column align-items-center">
     <h4>{{hotelname}}</h4>
+    <img src="data:image/png;base64,{{ specific_amenities_wordcloud }}" alt="Amenities Word Cloud">
   </div>
   <!-- All amenties -->
   <div class="col d-flex flex-column align-items-center">
     <h4>All hotels</h4>
+    <img src="data:image/png;base64,{{ all_amenities_wordcloud }}" alt="Amenities Word Cloud">
   </div>
 </div>
 <!-- Amenties insights -->
-<div class="row">
-  <div class="col">
-    you can implement xxx amenties
+<div class="card bg-light mb-3">
+  <h4 class="card-header">Analysis Insights</h4>
+  <div class="card-body">
+    <p class="card-text">{{awcresult | safe}}</p>
+    <p class="card-text">{{awcinsight | safe}}</p>
   </div>
 </div>
 <!--end of amenities-->

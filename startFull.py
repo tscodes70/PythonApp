@@ -16,7 +16,7 @@ def fullFlow():
     # dataScrape.dataScraper()
     # dataClean.dataCleaner(cin,cout)
     # dataClean.dataCleaner(cdfin,cout)
-    # dataStandardization.handleMissingData(mdin,mdout)
+    #dataStandardization.handleMissingData(mdin,mdout)
     dataAnalyze.dataAnalysis(ain,arout,ahout,getCorrelations)
     timeAnalyze.timeAnalysis()
     eTime = time.time() 
