@@ -60,12 +60,12 @@
     <img src="data:image/png;base64,{{ score_heatmap }}" alt="Heat Map">
   </div>
 </div>
-<div clas="row">
+<div class="row">
   <div class="col">
     <h3>{{ raHeader }}</h3>
     <div>{{ all_amenities_rank | safe }}</div>
-    <p>The top 3 amenities are : {% for amn in best_amenities %}{{ amn }}{% endfor %}</p>
-    <p>The bottm 3 amenities are: {% for amn in worst_amenities %}{{ amn }}{% endfor %}</p>
+    <p>The top 3 amenities are : {% for amn in best_amenities %}{{ amn }}, {% endfor %}</p>
+    <p>The bottom 3 amenities are: {% for amn in worst_amenities %}{{ amn }}, {% endfor %}</p>
   </div>
 </div>
 <div class="row">
@@ -76,6 +76,23 @@
   <div class="col">
     <h3>Correlation of Compound Sentiment to Average Rating</h3>
     <div>{{ scattermap|safe }}</div>
+  </div>
+</div>
+<div class="row">
+  <div class="col">
+    <h3>{{ gsHeader }}</h3>
+    <div>{{ all_gs_rank | safe }}</div>
+    <p>The most sought after factor is {{ best_factor }}</p>
+    <p>The least sought factor is {{ worst_factor }}</p>
+  </div>
+  
+</div>
+<div class="row">
+  <div class="col">
+    <h3>{{ ssHeader }}</h3>
+    <div>{{ all_season_rank | safe }}</div>
+    <p>The best performing season is {{ best_season }}</p>
+    <p>The worst performing season is {{ worst_season }}</p>
   </div>
 </div>
 <div class="row">
