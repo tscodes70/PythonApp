@@ -25,6 +25,10 @@ app = Flask(__name__)
 Bootstrap(app)
 app.secret_key = 'This is your secret key to utilize session in Flask'
 
+# selectors for correlation ranking
+SEASONS = ['winter', 'spring', 'autumn', 'summer']
+GENERAL = ['average.rating', 'average.reviews.length', 'prices', 'amenities', 'province', 'holiday']
+
 # takes data from analysedhotel-DATE.csv and loads it into a pandas dataframe
 fileread = os.path.join(globalVar.CSVD,globalVar.ANALYSISHOTELOUTPUTFULLFILE)
 df = pd.read_csv(fileread, index_col=0)
@@ -580,44 +584,47 @@ def scoringHeatmap(csvFile, correlationFile):
     return heatmap
 
 def rankingAmenities(csvFile, correlationFile):
-    # read correlation file
+    # read files
     df = pd.read_csv(csvFile)
     df_cor =  pd.read_csv(correlationFile)
     # create a list to remove provinces, holidays, general scoring coefficients
     # get the existing provinces within the current analyzed dataset
     provinces = df[globalVar.PROVINCE].unique()
-    holidays = ['holiday', 'winter', 'spring', 'autumn', 'summer']
-    general_score_vars = ['average.rating', 'average.reviews.length', 'prices', 'amenities', 'province']
     amenities_df = df_cor[~df_cor[globalVar.CORRVARIABLE].isin(provinces)] 
-    amenities_df = amenities_df[~amenities_df[globalVar.CORRVARIABLE].isin(holidays)]
-    amenities_df = amenities_df[~amenities_df[globalVar.CORRVARIABLE].isin(general_score_vars)]
+    amenities_df = amenities_df[~amenities_df[globalVar.CORRVARIABLE].isin(SEASONS)]
+    amenities_df = amenities_df[~amenities_df[globalVar.CORRVARIABLE].isin(GENERAL)]
 
     # sort amenities by coefficient score
     amenities_df = amenities_df.sort_values(by=[globalVar.CORRCOEFFICIENT], ascending=False)
     
     # get top rated and bottom rated amenities 
-    # not yet dynamic?
-    top_rated_amenities = amenities_df.head(3)
-    worst_rated_amenities = amenities_df.tail(3)
-    # plot graph
+    top_rated_amenities = amenities_df[globalVar.CORRVARIABLE].head(3)
+    worst_rated_amenities = amenities_df[globalVar.CORRVARIABLE].tail(3)
 
+    # plot graph
     rank_graph = px.bar(amenities_df, x=globalVar.CORRVARIABLE, y=globalVar.CORRCOEFFICIENT, title='Amenities Ranking')
     rank_graph.update_xaxes(tickangle=65)
-    
-    # bar_container = ax.bar(cor_var, cor_score)
-    # ax.set(ylabel='Coefficient Score', title='Coefficient Scores of Amenities')
-    # ax.bar_label(bar_container, fmt='{:,.3f}') 
-    # ax.set_xticklabels(cor_var, rotation=65)
-    
-    # fig.subplots_adjust(bottom=0.100)
-    # fig.tight_layout()
-    
-    # img_buffer = BytesIO()
-    # plt.savefig(img_buffer, format='png')
-    # img_buffer.seek(0)
-    # rank_graph = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
 
     return rank_graph.to_html(), top_rated_amenities.values.tolist(), worst_rated_amenities.values.tolist()
+
+def rankingGeneral(correlationFile, selector):
+    # read correlation file
+    df =  pd.read_csv(correlationFile)
+    # get this variables for ranking
+
+    # retrieve from correlation file and sort
+    general_coeff_scores = df[df[globalVar.CORRVARIABLE].isin(selector)]
+    general_coeff_scores = general_coeff_scores.sort_values(by=[globalVar.CORRCOEFFICIENT], ascending=False)
+
+    # get the best and worst factor sentiment analysis
+    best_factor = general_coeff_scores[globalVar.CORRVARIABLE].head(1)
+    worst_factor= general_coeff_scores[globalVar.CORRVARIABLE].tail(1)
+    
+    # plot graph
+    rank_graph = px.bar(general_coeff_scores, x=globalVar.CORRVARIABLE, y=globalVar.CORRCOEFFICIENT, title='Factor Performance')
+    rank_graph.update_xaxes(tickangle=65)
+
+    return rank_graph.to_html(), best_factor.tolist(), worst_factor.tolist()
 
 @app.route('/general', methods=("POST", "GET"))
 def generalPage():
@@ -647,10 +654,14 @@ def generalPage():
     amHeader = "Amenities"
     smHeader = "Scoring Heatmap"
     raHeader = "Amenities Rank"
+    gsHeader = "General Factors Coefficient Score"
+    ssHeader = "Seasonal Ranking"
 
     all_sentiment_piechart = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
     all_averagerating_histogram,all_averageRating = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE, globalVar.AVERAGE_RATING)
     all_amenities_rank, best_amenities, worst_amenities = rankingAmenities(globalVar.ANALYSISHOTELOUTPUTFULLFILE, globalVar.CORRFULLFILE)
+    all_gs_rank, best_factor, worst_factor = rankingGeneral(globalVar.CORRFULLFILE, GENERAL)
+    all_season_rank, best_season, worst_season = rankingGeneral(globalVar.CORRFULLFILE, SEASONS)
 
     return render_template("general.html",
                            hotel_name=hotel_name,
@@ -660,7 +671,9 @@ def generalPage():
                            wcHeader=wcHeader,
                            amHeader=amHeader,
                            smHeader=smHeader,
-                           raHeader=raHeader,                          
+                           raHeader=raHeader,
+                           gsHeader=gsHeader,
+                           ssHeader=ssHeader,                          
                            accomo_piechart = accomo_piechart,
                            scattermap=scattermap, 
                            provinces=provinces, 
@@ -668,10 +681,16 @@ def generalPage():
                            all_keywords_wordcloud = all_keywords_wordcloud,
                            all_averagerating_histogram = all_averagerating_histogram,
                            all_amenities_rank = all_amenities_rank,
+                           all_gs_rank = all_gs_rank,
+                           all_season_rank = all_season_rank,
                            score_heatmap=score_heatmap,
                            map_div=map_div,
                            best_amenities=best_amenities,
-                           worst_amenities=worst_amenities)
+                           worst_amenities=worst_amenities,
+                           best_factor=best_factor,
+                           worst_factor=worst_factor,
+                           best_season=best_season,
+                           worst_season=worst_season)
 
 @app.route('/summary', methods=("POST", "GET"))
 def summaryPage():
