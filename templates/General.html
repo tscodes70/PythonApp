@@ -34,24 +34,24 @@
 </form>
 <div class="row">
   <div class="col">
-    <h3>Map of Hotels in USA against the number of ratings</h3>
+    <h3>{{ mpHeader }}</h3>
     <div>{{ map_div | safe }}</div><br>
   </div>
 </div>
 <div class="row">
   <div class="col">
-    <h3>Categories of the accomodations</h3>
+    <h3>{{ acHeader }}</h3>
     <div>{{ accomo_piechart|safe }}</div>
-  </div>
-  <div class="col">
-    <h3>Number of hotels per Provinces in USA</h3>
-    <div>{{ provinces|safe }}</div>
   </div>
 </div>
 <div class="row">
   <div class="col">
     <h3>Wordcloud {{ selected_hotel }}</h3>
     <img src="data:image/png;base64,{{ all_keywords_wordcloud }}" alt="Word Cloud">
+  </div>
+  <div class="col">
+    <h3>Number of hotels per Provinces in USA</h3>
+    <div>{{ provinces|safe }}</div>
   </div>
 </div>
 <div class="row">
@@ -70,11 +70,13 @@
 </div>
 <div class="row">
   <div class="col">
-    <h3>Average Rating of the accomodations</h3>
+    <h3>{{ aaHeader }}</h3>
     <div>{{ all_averagerating_histogram|safe }}</div>
   </div>
+</div>
+<div class="row">
   <div class="col">
-    <h3>Correlation of Compound Sentiment to Average Rating</h3>
+    <h3>{{ scHeader }}</h3>
     <div>{{ scattermap|safe }}</div>
   </div>
 </div>

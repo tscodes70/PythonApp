@@ -162,6 +162,7 @@ def scatterplot():
 def provinceHistogram():
     count_province = df.groupby([globalVar.PROVINCE]).size().reset_index(name='Number of Hotels')
     provinces = px.bar(count_province, x='province', y='Number of Hotels')
+    provinces.update_xaxes(tickangle=65)
     return provinces.to_html()
 
 def map():
@@ -640,30 +641,38 @@ def generalPage():
     accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
     score_heatmap = scoringHeatmap(globalVar.ANALYSISHOTELOUTPUTFULLFILE, globalVar.CORRFULLFILE)
     
+    mpHeader = "Map of Hotels in USA against the number of ratings"
+    acHeader = "Categories of the accomodations"
     pcHeader = "Pie Chart" 
     rrHeader = "Review Rating"
     wcHeader = "Word Cloud"
     amHeader = "Amenities"
     smHeader = "Scoring Heatmap"
+    aaHeader = "Average Rating of the accomodations"
     raHeader = "Amenities Rank"
+    scHeader = "Plot of Compound Sentiment against Average Rating"
     gsHeader = "General Factors Coefficient Score"
     ssHeader = "Seasonal Ranking"
 
     all_sentiment_piechart = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
     all_averagerating_histogram,all_averageRating = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE, globalVar.AVERAGE_RATING)
-    all_amenities_rank, best_amenities, worst_amenities = rankingAmenities(globalVar.ANALYSISHOTELOUTPUTFULLFILE, globalVar.CORRFULLFILE)
+    all_amenities_rank, best_amenities, worst_amenities = rankingAmenities(globalVar.ANALYSISREVIEWOUTPUTFULLFILE, globalVar.CORRFULLFILE)
     all_gs_rank, best_factor, worst_factor = rankingGeneral(globalVar.CORRFULLFILE, GENERAL)
     all_season_rank, best_season, worst_season = rankingGeneral(globalVar.CORRFULLFILE, SEASONS)
 
     return render_template("general.html",
                            hotel_name=hotel_name,
                            selected_hotel=selected_hotel,
+                           mpHeader=mpHeader,
+                           acHeader=acHeader,
                            pcHeader=pcHeader,
                            rrHeader=rrHeader, 
                            wcHeader=wcHeader,
                            amHeader=amHeader,
                            smHeader=smHeader,
+                           aaHeader=aaHeader,
                            raHeader=raHeader,
+                           scHeader=scHeader,
                            gsHeader=gsHeader,
                            ssHeader=ssHeader,                          
                            accomo_piechart = accomo_piechart,
