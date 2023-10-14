@@ -83,16 +83,6 @@ def remove_sentence(sentence):
 
     return cleaned_sentence
 
-
-# Return true if its English, else false
-def is_english(sentence):
-    try:
-        return detect(sentence) == 'en'
-    except Exception as e:
-        print(f"Error detecting language for '{sentence}': {str(e)}")
-        return False
-
-
 def categoryReplace(dataFrame: pd.DataFrame) -> pd.DataFrame:
     # Replace Hotels to Hotel
     dataFrame['categories'] = dataFrame['categories'].str.replace('Hotels', 'Hotel', case=False)
