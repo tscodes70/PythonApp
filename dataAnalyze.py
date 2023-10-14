@@ -188,7 +188,7 @@ def processDataFromCsv(cleanCsvFilename:str) -> pd.DataFrame:
             websites.append(row[globalVar.WEBSITES])
 
             amenities.append(ast.literal_eval(row[globalVar.AMENITIES]))
-            prices.append(row[globalVar.PRICES])
+            prices.append(float(row[globalVar.PRICES]))
 
             reviews_cleantext.append(row[globalVar.REVIEWS_CLEANTEXT])
             reviews_summary.append(row[globalVar.REVIEWS_TEXT])
@@ -211,6 +211,7 @@ def initiateAnalysis(data:pd.DataFrame, OUTPUTREVIEWFULLFILE,OUTPUTHOTELFULLFILE
     globalVar.REVIEWS_TEXT: lambda x: '<SPLIT> '.join(x),
     globalVar.REVIEWS_CLEANTEXT: lambda z: ' '.join(z),
     globalVar.AVERAGE_RATING: 'mean',
+    globalVar.PRICES: 'mean',
     globalVar.COMPOUND_SENTIMENT_SCORE: 'mean'
     }).reset_index()
     hProcessedData = analyzeIndividualReviews(hProcessedData)
@@ -356,33 +357,3 @@ def dataAnalysis(INPUTFULLFILE,OUTPUTREVIEWFULLFILE,OUTPUTHOTELFULLFILE,GETCORRE
 
         # weight = getWeights(sortedTotalCorrelations)
         # predictSentiment(weight)
-
-
-    # 
-    # analyzeCorrelations(gProcessedData,globalVar.CATEGORIES) (budget or luxury)
-    # gProcessedData["ReviewDateFormatted"] = pd.to_datetime(gProcessedData[globalVar.REVIEWS_DATE])
-    # analyzeCorrelations(gProcessedData,'ReviewDateFormatted')
-    # analyzeCorrelations(gProcessedData,'Keywords')
-    #.to_csv("outputdata2.csv")
-    
-# try:       
-#     sTime = time.time() 
-#     main()
-#     eTime = time.time()
-#     runtime = eTime - sTime
-#     print(f"======= Analyze Information =======")
-#     print(f"Runtime: {runtime} seconds")
-#     print(f"===================================")
-
-# except:
-#     traceback.print_exc() 
-# cin = globalVar.CLEANERINPUTFULLFILE
-# cdfin = globalVar.CLEANERCUSTOMFULLFILE
-# cout = globalVar.CLEANEROUTPUTFULLFILE
-# mdin = globalVar.MDINPUTFULLFILE
-# mdout = globalVar.MDOUTPUTFULLFILE
-# ain = globalVar.ANALYSISINPUTFULLFILE
-# arout = globalVar.ANALYSISREVIEWOUTPUTFULLFILE
-# ahout = globalVar.ANALYSISHOTELOUTPUTFULLFILE
-# getCorrelations = True
-# dataAnalysis(ain,arout,ahout,getCorrelations)

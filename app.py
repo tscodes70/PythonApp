@@ -136,6 +136,21 @@ def averageRatingHistogram(csvFile,dfHeader):
     rating_histogram = histogram.to_html()
     return rating_histogram,histogram_data.mean()
 
+def pricingHistogram(csvFile,dfHeader):
+    df = pd.read_csv(csvFile)
+    histogram_data = df[dfHeader].astype(float)
+    histHeader = "Average Pricing" if dfHeader == globalVar.PRICES else "Pricing"
+
+    # Create a histogram figure using go.Figure
+    histogram = go.Figure(data=[go.Histogram(x=histogram_data)])
+    histogram.update_layout(
+        title=f'Bargraph of {histHeader}',
+        xaxis_title= f"{histHeader}",
+        yaxis_title='Count'
+    )
+    pricing_histogram = histogram.to_html()
+    return pricing_histogram,histogram_data.mean()
+
 def scatterplot():
     scattermap = px.scatter(df, x=globalVar.AVERAGE_RATING, y=globalVar.COMPOUND_SENTIMENT_SCORE)
     return scattermap.to_html()
@@ -214,7 +229,7 @@ def getReviewRatingInsight(hotelname:str,specific:float,all:float):
                   "1. Positive Guest Experience\n" +
                   "2. Quality Service\n" + 
                   "3. Good Value for Money")
-        insight = (f"{hotelname} performing better than the average hotel in terms of customer satisfaction, not much insight to be given for this comparison.")
+        insight = (f"{hotelname} performing better than compared to the average hotel in general.")
     # Hotel lower review rating than average
     else:
         result = (f"{hotelname} has a lower average rating than the average hotel. It is likely that " +
@@ -267,14 +282,41 @@ def getAmenitiesInsight(hotelname:str,hotel_amenities:dict,all_amenities:dict):
         result = f"The word cloud for {hotelname} includes common amenities implemented by other hotels.\nThese amenities include: "
         result += ", ".join(implemented_amenities)
         insight = (f"{hotelname} shares common amenities implemented by other hotels, which is a positive sign.\nHowever these amenities " + 
-                    "can be considered: \n")
+                    "can be considered: ")
         insight += ", ".join(unimplemented_amenities)
     else:
         result = f"The word cloud for {hotelname} does not include common amenities implemented by other hotels, which implies there is much room for improvement."
-        insight = f"{hotelname} may have to consider implementing these amenities to compete against competitor hotels:\n"
+        insight = f"{hotelname} may have to consider implementing these amenities to compete against competitor hotels: "
         insight += ", ".join(unimplemented_amenities)
     return background,result,insight
 
+def getPricingInsight(hotelname:str,specific:float,all:float):
+    background = ("The pricing histogram shows the average prices for a room of a hotel")
+    result = ""
+    insight = ""
+    # Hotel higher rprices than average
+    if specific > all:
+        result = f"{hotelname} has higher average prices compared to the average hotel. Several factors may justify its pricing:"
+        result += "\n1. Location and Demand: Prime locations and high demand lead to higher prices."
+        result += "\n2. Quality and Luxury: Premium services and amenities justify higher costs."
+        result += "\n3. Room Types: Suites and special views can command higher rates."
+
+        insight = f"If {hotelname} is outperforming in pricing but underperforming in other areas, consider the following improvements:"
+        insight += "\n1. Enhance customer services and overall guest experience."
+        insight += "\n2. Implement new amenities or renovate existing ones to add value."
+        insight += "\n3. Reevaluate pricing to ensure it aligns with current services and amenities offered."
+    # Hotel lower review rating than average
+    else:
+        result = f"{hotelname} has lower average prices compared to the average hotel. Several factors may explain its competitive pricing:"
+        result += "\n1. Location and Demand: Lower-demand areas may have more competitive prices."
+        result += "\n2. Cost-Efficiency: Effective cost management can result in lower pricing."
+        result += "\n3. Simplified Amenities: Fewer amenities can lead to more affordable rates."
+
+        insight = f"If {hotelname} is excelling in pricing but underperforming in other areas, consider the following enhancements:"
+        insight += "\n1. Marketing and Promotion: Promote the hotel's affordability to attract more guests."
+        insight += "\n2. Expand Amenities: Consider adding or enhancing amenities to improve the guest experience."
+        insight += "\n3. Monitor Customer Feedback: Stay attuned to guest reviews to identify areas for improvement."
+    return background,result,insight
 
 @app.route('/', methods=['GET','POST'])
 def upload():
@@ -402,6 +444,15 @@ def comparisonPage():
     awcbg = awcbg.replace('\n', '<br>')
     awcresult = awcresult.replace('\n', '<br>')
     awcinsight = awcinsight.replace('\n', '<br>')
+
+    all_pricing_histogram,all_pricing = pricingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.PRICES)
+    specific_pricing_histogram,specific_pricing = pricingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
+    prbg,prresult,rrinsight=getReviewRatingInsight(hotelname,specific_pricing,all_pricing)
+    prbg = prbg.replace('\n', '<br>')
+    prresult = prresult.replace('\n', '<br>')
+    rrinsight = rrinsight.replace('\n', '<br>')
+
+    
 
 
     return render_template("comparison.html",
