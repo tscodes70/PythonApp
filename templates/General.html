@@ -53,7 +53,20 @@
     <h3>Wordcloud {{ selected_hotel }}</h3>
     <img src="data:image/png;base64,{{ all_keywords_wordcloud }}" alt="Word Cloud">
   </div>
-
+</div>
+<div class="row">
+  <div class="col">
+    <h3>{{ smHeader }}</h3>
+    <img src="data:image/png;base64,{{ score_heatmap }}" alt="Heat Map">
+  </div>
+</div>
+<div clas="row">
+  <div class="col">
+    <h3>{{ raHeader }}</h3>
+    <div>{{ all_amenities_rank | safe }}</div>
+    <p>The top 3 amenities are : {% for amn in best_amenities %}{{ amn }}{% endfor %}</p>
+    <p>The bottm 3 amenities are: {% for amn in worst_amenities %}{{ amn }}{% endfor %}</p>
+  </div>
 </div>
 <div class="row">
   <div class="col">

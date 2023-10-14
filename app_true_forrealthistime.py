@@ -11,7 +11,8 @@ import base64
 import matplotlib.pyplot as plt
 from flask import json
 import numpy as np 
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
+import seaborn as sns
 import pandas as pd 
 import contextily as ctx 
 import geopandas as gpd 
@@ -463,6 +464,100 @@ def keywordsWordCloudSpecific(csvFile, selector):
     wordcloud = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
     return wordcloud
 
+def scoringHeatmap(csvFile, correlationFile):
+    # get the provinces in the given analyzed hotels into a list
+    df_hotel = pd.read_csv(csvFile)
+    
+    # get the values needed correlate the coefficient values against the avg sentiment and ratings
+    count_avg_sentiment_score = df_hotel.groupby(globalVar.PROVINCE)[globalVar.COMPOUND_SENTIMENT_SCORE].mean().reset_index()
+    count_avg_rating_score = df_hotel.groupby(globalVar.PROVINCE)[globalVar.AVERAGE_RATING].mean().reset_index()
+    count_avg_reviews_per_hotel = df_hotel.groupby(globalVar.PROVINCE)[globalVar.REVIEWS_TOTAL].mean().reset_index()
+    # get the provinces
+    province_count = count_avg_sentiment_score[globalVar.PROVINCE].values
+    
+    # read correlation file, get all the provinces score along with the provinces
+    df_correlation = pd.read_csv(correlationFile)
+    province_correlation_score = df_correlation[df_correlation[globalVar.CORRVARIABLE].isin(province_count)]
+    
+    # sort all count and score by province name
+    province_correlation_score = province_correlation_score.sort_values(globalVar.CORRVARIABLE)
+    count_avg_sentiment_score = count_avg_sentiment_score.sort_values(globalVar.PROVINCE)
+    count_avg_rating_score = count_avg_rating_score.sort_values(globalVar.PROVINCE)
+    count_avg_reviews_per_hotel = count_avg_reviews_per_hotel.sort_values(globalVar.PROVINCE)
+    
+    # list the values
+    provinces = province_correlation_score[globalVar.CORRVARIABLE].tolist()
+    coefficient_score = province_correlation_score[globalVar.CORRCOEFFICIENT].tolist()
+    avg_sentiment_score = count_avg_sentiment_score[globalVar.COMPOUND_SENTIMENT_SCORE].tolist()
+    avg_rating_score = count_avg_rating_score[globalVar.AVERAGE_RATING].tolist()
+    avg_reviews_per_hotel = count_avg_reviews_per_hotel[globalVar.REVIEWS_TOTAL].tolist()
+
+    # add them into final dataframe for correlation
+    final_df = pd.DataFrame(provinces, columns=['provinces'])
+    final_df = final_df.assign(coefficient=coefficient_score)
+    final_df = final_df.assign(sentiment=avg_sentiment_score)
+    final_df = final_df.assign(rating=avg_rating_score)
+    final_df = final_df.assign(reviews=avg_reviews_per_hotel)
+    final_df = final_df.drop('provinces', axis=1)
+    
+    # correlate the scores of all the coeffiecient
+    hmap = final_df.corr()
+
+    # plot the heatmap
+    plt.figure(figsize=(10,10))
+    column_head = ['Provinces Coefficient', 'Sentiment Score', 'Average Rating', 'Reviews']
+    correlation_map = sns.heatmap(hmap, annot=True, xticklabels=column_head, yticklabels=column_head, cmap="coolwarm", fmt=".2f")
+    correlation_map.set_title('Average Score Correlelation')
+    correlation_map.xaxis.tick_top()
+
+    # encode to html and png format
+    img_buffer = BytesIO()
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    heatmap = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+    
+    return heatmap
+
+def rankingAmenities(csvFile, correlationFile):
+    # read correlation file
+    df = pd.read_csv(csvFile)
+    df_cor =  pd.read_csv(correlationFile)
+    # create a list to remove provinces, holidays, general scoring coefficients
+    # get the existing provinces within the current analyzed dataset
+    provinces = df[globalVar.PROVINCE].unique()
+    holidays = ['holiday', 'winter', 'spring', 'autumn', 'summer']
+    general_score_vars = ['average.rating', 'average.reviews.length', 'prices', 'amenities', 'province']
+    amenities_df = df_cor[~df_cor[globalVar.CORRVARIABLE].isin(provinces)] 
+    amenities_df = amenities_df[~amenities_df[globalVar.CORRVARIABLE].isin(holidays)]
+    amenities_df = amenities_df[~amenities_df[globalVar.CORRVARIABLE].isin(general_score_vars)]
+
+    # sort amenities by coefficient score
+    amenities_df = amenities_df.sort_values(by=[globalVar.CORRCOEFFICIENT], ascending=False)
+    
+    # get top rated and bottom rated amenities 
+    # not yet dynamic?
+    top_rated_amenities = amenities_df.head(3)
+    worst_rated_amenities = amenities_df.tail(3)
+    # plot graph
+
+    rank_graph = px.bar(amenities_df, x=globalVar.CORRVARIABLE, y=globalVar.CORRCOEFFICIENT, title='Amenities Ranking')
+    rank_graph.update_xaxes(tickangle=65)
+    
+    # bar_container = ax.bar(cor_var, cor_score)
+    # ax.set(ylabel='Coefficient Score', title='Coefficient Scores of Amenities')
+    # ax.bar_label(bar_container, fmt='{:,.3f}') 
+    # ax.set_xticklabels(cor_var, rotation=65)
+    
+    # fig.subplots_adjust(bottom=0.100)
+    # fig.tight_layout()
+    
+    # img_buffer = BytesIO()
+    # plt.savefig(img_buffer, format='png')
+    # img_buffer.seek(0)
+    # rank_graph = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+
+    return rank_graph.to_html(), top_rated_amenities.values.tolist(), worst_rated_amenities.values.tolist()
+
 @app.route('/general', methods=("POST", "GET"))
 def generalPage():
     # check if theres a POST request from dropdown list
@@ -483,14 +578,18 @@ def generalPage():
     scattermap = scatterplot()
     provinces = provinceHistogram()
     accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
-
+    score_heatmap = scoringHeatmap(globalVar.ANALYSISHOTELOUTPUTFULLFILE, globalVar.CORRFULLFILE)
+    
     pcHeader = "Pie Chart" 
     rrHeader = "Review Rating"
     wcHeader = "Word Cloud"
     amHeader = "Amenities"
+    smHeader = "Scoring Heatmap"
+    raHeader = "Amenities Rank"
 
     all_sentiment_piechart = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
-    all_averagerating_histogram,all_averageRating = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.AVERAGE_RATING)
+    all_averagerating_histogram,all_averageRating = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE, globalVar.AVERAGE_RATING)
+    all_amenities_rank, best_amenities, worst_amenities = rankingAmenities(globalVar.ANALYSISHOTELOUTPUTFULLFILE, globalVar.CORRFULLFILE)
 
     return render_template("general.html",
                            hotel_name=hotel_name,
@@ -499,13 +598,19 @@ def generalPage():
                            rrHeader=rrHeader, 
                            wcHeader=wcHeader,
                            amHeader=amHeader,
+                           smHeader=smHeader,
+                           raHeader=raHeader,                          
                            accomo_piechart = accomo_piechart,
                            scattermap=scattermap, 
                            provinces=provinces, 
                            all_sentiment_piechart = all_sentiment_piechart,
                            all_keywords_wordcloud = all_keywords_wordcloud,
                            all_averagerating_histogram = all_averagerating_histogram,
-                           map_div=map_div)
+                           all_amenities_rank = all_amenities_rank,
+                           score_heatmap=score_heatmap,
+                           map_div=map_div,
+                           best_amenities=best_amenities,
+                           worst_amenities=worst_amenities)
 
 @app.route('/summary', methods=("POST", "GET"))
 def summaryPage():
