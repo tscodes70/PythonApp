@@ -252,7 +252,7 @@ def getWordCloudInsight(hotelname:str,hotel_keywords:list,all_hotel_keywords:lis
     return background,result,insight
 
 def getAmenitiesInsight(hotelname:str,hotel_amenities:dict,all_amenities:dict):
-    background = ("A Wordcloud shows the most discussed topics of customers through their reviews")
+    background = ("A amenity word cloud shows what amenities are the most common among other hotels.")
     result = ""
     insight = ""
     all_amenities_sorted = dict(sorted(all_amenities.items(), key=lambda item: item[1], reverse=True))
@@ -266,7 +266,7 @@ def getAmenitiesInsight(hotelname:str,hotel_amenities:dict,all_amenities:dict):
     if implemented_amenities:
         result = f"The word cloud for {hotelname} includes common amenities implemented by other hotels.\nThese amenities include: "
         result += ", ".join(implemented_amenities)
-        insight = (f"{hotelname} shares common amenities implemented by other hotels, which is a positive sign.\nHowever these amenities" + 
+        insight = (f"{hotelname} shares common amenities implemented by other hotels, which is a positive sign.\nHowever these amenities " + 
                     "can be considered: \n")
         insight += ", ".join(unimplemented_amenities)
     else:
@@ -335,6 +335,7 @@ def homePage():
     specific_sentiment_piechart,positiveSent,negativeSent,totalSent = sentimentPieChart(session['analyzed_reviews'])
     specific_keywords_wordcloud,specific_wordcloud = keywordsWordCloud(session['analyzed_hotels'])
     specific_averagerating_histogram,specific_averageRating = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
+    specific_amenities_wordcloud,specific_amenities = amenitiesWordCloud(session['analyzed_hotels'])
     average_sentiment_over_time_graph = averageSentimentOverTime(session['analyzed_reviews'])
 
     return render_template("home.html",
@@ -347,6 +348,7 @@ def homePage():
                            specific_sentiment_piechart = specific_sentiment_piechart,
                            specific_keywords_wordcloud = specific_keywords_wordcloud,
                            specific_averagerating_histogram = specific_averagerating_histogram,
+                           specific_amenities_wordcloud=specific_amenities_wordcloud,
                            main_hotel_details=main_hotel_details,
                            average_sentiment_over_time_graph = average_sentiment_over_time_graph)
 

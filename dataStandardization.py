@@ -172,7 +172,7 @@ def predictiveModelling(dataframe:pd.DataFrame):
             doc = nlp(str(review))
             if len(amenities) == 2:
                 # Extract mentions of amenities
-                extracted_amenities  = list(set(token.text.lower().capitalize() for token in doc if token.text.lower() in amenities_list))  # Customize amenities list
+                extracted_amenities  = list(set(f"'{token.text.lower().capitalize()}'" for token in doc if token.text.lower() in amenities_list))  # Customize amenities list
                 dataframe.at[index, globalVar.AMENITIES] = f"[{', '.join(extracted_amenities)}]"
 
         print(f"Standardized {index + 1} hotels out of {len(dataframe[globalVar.REVIEWS_TEXT])}")
