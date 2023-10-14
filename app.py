@@ -138,6 +138,7 @@ def averageRatingHistogram(csvFile,dfHeader):
 
 def pricingHistogram(csvFile,dfHeader):
     df = pd.read_csv(csvFile)
+    df = df[df[globalVar.PRICES] != 0]
     histogram_data = df[dfHeader].astype(float)
     histHeader = "Average Pricing" if dfHeader == globalVar.PRICES else "Pricing"
 
@@ -146,7 +147,7 @@ def pricingHistogram(csvFile,dfHeader):
     histogram.update_layout(
         title=f'Bargraph of {histHeader}',
         xaxis_title= f"{histHeader}",
-        yaxis_title='Count'
+        yaxis_title='Hotels'
     )
     pricing_histogram = histogram.to_html()
     return pricing_histogram,histogram_data.mean()
@@ -415,6 +416,7 @@ def comparisonPage():
     wcComparisonHeader = "Word Cloud Comparison"
     rrComparisonHeader = "Review Rating Comparison"
     amComparisonHeader = "Amenities Comparison"
+    prComparisonHeader = "Pricing Comparison"
 
     # Comparisons Charts
     all_sentiment_piechart,all_positiveSent,all_negativeSent,all_totalSent = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
@@ -446,8 +448,8 @@ def comparisonPage():
     awcinsight = awcinsight.replace('\n', '<br>')
 
     all_pricing_histogram,all_pricing = pricingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE,globalVar.PRICES)
-    specific_pricing_histogram,specific_pricing = pricingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
-    prbg,prresult,rrinsight=getReviewRatingInsight(hotelname,specific_pricing,all_pricing)
+    specific_pricing_histogram,specific_pricing = pricingHistogram(session['analyzed_hotels'],globalVar.PRICES)
+    prbg,prresult,rrinsight=getPricingInsight(hotelname,specific_pricing,all_pricing)
     prbg = prbg.replace('\n', '<br>')
     prresult = prresult.replace('\n', '<br>')
     rrinsight = rrinsight.replace('\n', '<br>')
@@ -476,6 +478,11 @@ def comparisonPage():
                            hotelname=hotelname, 
                            scattermap=scattermap, 
                            provinces=provinces,
+                           prbg=prbg,
+                           prresult=prresult,
+                           rrinsight=rrinsight,
+                           all_pricing_histogram=all_pricing_histogram,
+                           specific_pricing_histogram=specific_pricing_histogram,
                            all_amenities_wordcloud = all_amenities_wordcloud,
                            specific_amenities_wordcloud = specific_amenities_wordcloud,
                            all_sentiment_piechart = all_sentiment_piechart,
@@ -488,6 +495,7 @@ def comparisonPage():
                            rrComparisonHeader = rrComparisonHeader, 
                            wcComparisonHeader = wcComparisonHeader,
                            amComparisonHeader = amComparisonHeader,
+                           prComparisonHeader = prComparisonHeader,
                            main_hotel_details=main_hotel_details,
                            map_div=map_div)
 
