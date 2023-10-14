@@ -23,12 +23,12 @@
 <form method="POST" action="{{ url_for('generalPage') }}">
   <div class="form-group">
     <label for="hotelName-dropdown">Choose a Hotel</label>
-      <select class="custom-select" id="hotelName-dropdown" name="hotelName-dropdown">
-          <option value="">All</option>
-        {% for name in hotel_name %}
-          <option value="{{ name }}">{{ name }}</option>
-        {% endfor%}
-      </select>
+    <select class="custom-select" id="hotelName-dropdown" name="hotelName-dropdown">
+      <option value="">All</option>
+      {% for name in hotel_name %}
+      <option value="{{ name }}">{{ name }}</option>
+      {% endfor%}
+    </select>
   </div>
   <button type="submit" class="btn btn-primary">Submit</button>
 </form>
@@ -36,65 +36,93 @@
   <div class="col">
     <h3>{{ mpHeader }}</h3>
     <div>{{ map_div | safe }}</div><br>
+    <b>Heatmap of Occuring Reviews</b>
+    <p>This is a map to indicate the number of reviews occurring in any given states of the USA. The brighter the value,
+      the greater the amount of reviews occuring.</p>
   </div>
 </div>
 <div class="row">
   <div class="col">
     <h3>{{ acHeader }}</h3>
     <div>{{ accomo_piechart|safe }}</div>
+    <b>Piechart of most common categories</b>
+    <p>This is a piechart indicating which categories are most common among each hotel.</p>
   </div>
 </div>
 <div class="row">
   <div class="col">
     <h3>Wordcloud {{ selected_hotel }}</h3>
     <img src="data:image/png;base64,{{ all_keywords_wordcloud }}" alt="Word Cloud">
+    <br>
+    <b>Word Cloud Count</b>
+    <p>A word cloud showing which words occur the most among all reviews submitted by users in the dataset. Select a
+      hotel above to view its' corresponding word cloud count.</p>
   </div>
   <div class="col">
     <h3>Number of hotels per Provinces in USA</h3>
     <div>{{ provinces|safe }}</div>
+    <b>Count of Hotels</b>
+    <p>A bar graph counting how many hotels exists within any given province within the dataset in the USA.</p>
   </div>
 </div>
 <div class="row">
   <div class="col">
     <h3>{{ smHeader }}</h3>
     <img src="data:image/png;base64,{{ score_heatmap }}" alt="Heat Map">
+    <br>
+    <b>Score correlation accross provinces</b>
+    <p>A heat map that shows the given correlation of the different scoring methods of a hotel, averaged by score
+      accross provinces. The greater the value, the greater the correlation.</p>
   </div>
 </div>
 <div class="row">
   <div class="col">
     <h3>{{ raHeader }}</h3>
     <div>{{ all_amenities_rank | safe }}</div>
-    <p>The top 3 amenities are : {% for amn in best_amenities %}{{ amn }}, {% endfor %}</p>
-    <p>The bottom 3 amenities are: {% for amn in worst_amenities %}{{ amn }}, {% endfor %}</p>
+    <b>Ranking of Amenities Coefficient score</b>
+    <p>A bar graph ranking given amenities of any given hotel and how much likely it is to affect hotel scores. The
+      greater the number, the bigger the effect. Negative values are unfavourable on the hand, indicating a negative correlation.</p>
+    <p>The top 5 most sought after amenities are : {% for amn in best_amenities %}{{ amn }}, {% endfor %}</p>
+    <p>The bottom 5 least sought after amenities are: {% for amn in worst_amenities %}{{ amn }}, {% endfor %}</p>
   </div>
 </div>
 <div class="row">
   <div class="col">
     <h3>{{ aaHeader }}</h3>
     <div>{{ all_averagerating_histogram|safe }}</div>
+    <b>Average Ranking of all Hotel</b>
+    <p>A histogram showing the average hotel review score accross the dataset.</p>
   </div>
 </div>
 <div class="row">
   <div class="col">
     <h3>{{ scHeader }}</h3>
     <div>{{ scattermap|safe }}</div>
+    <b>Plot Graph Score Rating.</b>
+    <p>A plot graph of the average rating of all hotels againsts their compound sentiment score.</p>
   </div>
 </div>
 <div class="row">
   <div class="col">
     <h3>{{ gsHeader }}</h3>
     <div>{{ all_gs_rank | safe }}</div>
-    <p>The most sought after factor is {{ best_factor }}</p>
-    <p>The least sought factor is {{ worst_factor }}</p>
+    <b>Bar Graph Ranking of General Factors</b>
+    <p>This is bar graph ranking of all general factors and how much it affects the overall compound sentiment score of
+      a given hotel. Visitors are likely to judge on these factors.</p>
+    <p>The most important and impactful factor is :{{ best_factor }}</p>
+    <p>The least important and impactful factor is :{{ worst_factor }}</p>
+    <p>Hotels should be mindful {{ best_factor}} as it is the factor visitors will most likely pay attention to any
+      given hotel.</p>
   </div>
-  
 </div>
 <div class="row">
   <div class="col">
     <h3>{{ ssHeader }}</h3>
     <div>{{ all_season_rank | safe }}</div>
+    <bar></bar>
     <p>The best performing season is {{ best_season }}</p>
     <p>The worst performing season is {{ worst_season }}</p>
+    <p>Hotels should pay attention to visitor attraction and retention in the season of {{ best_season }}.</p>
   </div>
 </div>
 <div class="row">

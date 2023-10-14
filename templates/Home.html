@@ -3,50 +3,95 @@
 
 
 {% block body %}
-<!-- <div id="main_hotel_info">
+<h1>Welcome {{ hotel_name }}</h1>
+<br>
+<div id="main_hotel_info">
   <div class="row">
     <div class="col-4">
       <div class="list-group" id="list-tab" role="tablist">
-        <a class="list-group-item list-group-item-action active" id="list-home-list" data-toggle="list" href="#hotel_name" role="tab" aria-controls="home">Name</a>
-        <a class="list-group-item list-group-item-action" id="list-profile-list" data-toggle="list" href="#hotel_location" role="tab" aria-controls="profile">Location</a>
-        <a class="list-group-item list-group-item-action" id="list-messages-list" data-toggle="list" href="#hotel_ratings" role="tab" aria-controls="messages">Ratings</a>
-        <a class="list-group-item list-group-item-action" id="list-settings-list" data-toggle="list" href="#hotel_reviews" role="tab" aria-controls="settings">Review Summary</a>
+        <a class="list-group-item list-group-item-action active" id="Hotel Category" data-toggle="list"
+          href="#hotel_category" role="tab" aria-controls="home">Category</a>
+        <a class="list-group-item list-group-item-action" id="Total Reviews" data-toggle="list" href="#hotel_reviews"
+          role="tab" aria-controls="profile">Total Reviews</a>
+        <a class="list-group-item list-group-item-action" id="Average Rating" data-toggle="list" href="#hotel_ratings"
+          role="tab" aria-controls="messages">Average Rating</a>
+        <a class="list-group-item list-group-item-action" id="Compound Score" data-toggle="list" href="#hotel_score"
+          role="tab" aria-controls="settings">Compound Sentiment Score</a>
       </div>
     </div>
     <div class="col-8">
       <div class="tab-content" id="nav-tabContent">
-        <div class="tab-pane fade show active" role="tabpanel" aria-labelledby="list-home-list" id="hotel_name">
-          {{ main_hotel_details [0][0] }}
+        <div class="tab-pane fade show active" role="tabpanel" id="hotel_category">
+          <p>This hotel's main category is : {{ hotel_category }} </p>
+          <b>Category</b>
+          <p>This shows the main category of the hotel, what the hotel primarily is.</p>
         </div>
-        <div class="tab-pane fade" role="tabpanel" aria-labelledby="list-profile-list" id="hotel_location">
-          Province: {{ main_hotel_details[0][1] }}<br>
-          Postal Code: {{ main_hotel_details[0][2] }}
+        <div class="tab-pane fade" role="tabpanel" id="hotel_reviews">
+          <p>Total amount of reviews for this hotel : {{ hotel_total_reviews }} </p>
+          <b>Total Reviews</b>
+          <p>This shows the total amount of user submitted reviews the hotel has accumulated. More reviews allows
+            greater accuracy of analysis.</p>
         </div>
-        <div class="tab-pane fade" role="tabpanel" aria-labelledby="list-messages-list" id="hotel_ratings">
-          Number of Reviwes: {{ main_hotel_details[0][7] }}<br>
-          Average Rating: {{ main_hotel_details[0][9] }}<br> 
-          Compound Sentiment: {{ main_hotel_details[0][5] }}
+        <div class="tab-pane fade" role="tabpanel" id="hotel_ratings">
+          <p>The average rating for this hotel is : {{ hotel_average }}</p>
+          <b>Average Rating</b>
+          <p>The total of review scores of given reviews averaged over the total amount of submitted reviews. The score
+            ranges from 0 - 5.</p>
         </div>
-        <div class="tab-pane fade" role="tabpanel" aria-labelledby="list-settings-list" id="hotel_reviews">
-          {{ main_hotel_details[0][6] }}
+        <div class="tab-pane fade" role="tabpanel" id="hotel_score">
+          <p>The overall compound sentiment score for this hotel is : {{ hotel_compound }}</p>
+          <b>Compound Sentiment</b>
+          <p>Compound Sentiment is a score achieved by the hotel after processing the data of the reviews. The overall
+            score is compound from it total corresponding reviews.</p>
+          <p>The score ranges from -1 to 1.If the score is more than 0, it will be positve sentiment, indicating
+            favourable views.
+            If it is below 0, it will be negative sentiment, indicating unfavourable views. If it 0, it will be neutral,
+            indicating neither positive nor negative sentiment.</p>
+          <p>This hotel's sentiment is {{ hotel_overall }}</p>
         </div>
       </div>
     </div>
   </div>
-</div> -->
-<h1>Welcome {{main_hotel_details [0][0]}}</h1>
-            <br>
-
-            <!--Home Page-->
-            <h3>{{ pcHeader }}</h3>  
-            <div>{{ specific_sentiment_piechart |safe }}</div>
-            <h3>{{ wcHeader }}</h3>  
-            <img src="data:image/png;base64,{{ specific_keywords_wordcloud }}" alt="Word Cloud">
-            <h3>{{ rrHeader }}</h3>  
-            <div>{{ specific_averagerating_histogram | safe }}</div>
-            <h3>{{ amHeader }}</h3>  
-            <img src="data:image/png;base64,{{ specific_amenities_wordcloud }}" alt="Word Cloud">
-            <h3>{{ asHeader }}</h3>
-            <div>{{ average_sentiment_over_time_graph | safe }}</div>
-          </div>
-{% endblock %}  
+</div>
+<br>
+<!--Home Page-->
+<h3>{{ pcHeader }}</h3>
+  <div>{{ specific_sentiment_piechart |safe }}</div>
+  <b>Sentiment Pie Chart</b>
+  <p>A pie chart showing the percentage of overall sentiments it has.</p>
+  <p>This hotel has {{ positiveSent }} postive values, {{ negativeSent }} negative values, {{ neutralSent}} neutral
+    values, out of {{ totalSent }} sentiment values.</p>
+  <p>The main sentiment of this hotel is {{ domination }}. It is {{ sentiment }} at {{ biggest_sentiment }}%. {{ special_case }}</p>
+<h3>{{ wcHeader }}</h3>
+<img src="data:image/png;base64,{{ specific_keywords_wordcloud }}" alt="Word Cloud">
+  <br>
+  <b>Word Cloud Count</b>
+  <p>This is a word cloud of the most reoccuring items within the reviews of the hotels. The bigger the word, the 
+    more the word has appeared in the hotel's written reviews</p>
+  <p>The top {{ len_occur }} most reoccuring words in this hotel's review are:</p>
+  <p>{% for word, occur in specific_wordcloud.items() %}{{ word }} : {{ occur }}, {% endfor %}</p>
+  <p>Hotels can look into these words as they are the most discussed words that appear in their reviews, which may give insight of the characteristics of their hotel from 
+    a viewpoint of a visitor.
+  </p>
+<h3>{{ rrHeader }}</h3>
+  <div>{{ specific_averagerating_histogram | safe }}</div>
+  <b>Review Rating Count</b>
+  <p>A bar graph displaying the which score was given the most for the hotel.</p>
+  <p>From the graph, average rating of all reviews of the hotel is {{ specific_averageRating }}.</p>
+<h3>{{ amHeader }}</h3>
+  <img src="data:image/png;base64,{{ specific_amenities_wordcloud }}" alt="Word Cloud">
+  <br>
+  <b>Word Cloud Count for Amenities</b>
+  <p>{{ amenities_paragraph }}</p>
+<h3>{{ asHeader }}</h3>
+  <div>{{ average_sentiment_over_time_graph | safe }}</div>
+  <b>Sentiment Timeline</b>
+  <p>This is a line graph charting the average sentiment score of the hotel over the given periods of its review.</p>
+  <p>The highest scoring sentiment was on {{ max_date }} with a score of {{ max_score }}</p>
+  <p>The reviewer gave the following review:</p>
+  <p>{{ max_text }}</p>
+  <p>The lowest scoring sentiment was on {{ min_date }} with a score of {{ min_score }}</p>
+  <p>The reviewer gave the following review:</p>
+  <p>{{ min_text }}</p>
+</div>
+{% endblock %}

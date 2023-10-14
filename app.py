@@ -67,7 +67,7 @@ def sentimentPieChart(csvFile):
     spc = go.Figure(data=[go.Pie(labels=pcLabels, values=valList)])
     # Convert the chart to an HTML div
     sentiment_piechart = spc.to_html(full_html=False)
-    return sentiment_piechart,int(positiveSent),int(negativeSent),int(totalSent)
+    return sentiment_piechart,int(positiveSent),int(negativeSent),int(totalSent),int(neutralSent)
 
 def accomodationPieChart(csvFile):
     df = pd.read_csv(csvFile)
@@ -363,30 +363,135 @@ def summary():
 def averageSentimentOverTime(csvFile):
     df = pd.read_csv(csvFile)
     df = df.sort_values(by=globalVar.REVIEWS_DATE)
+    max_df = df[df[globalVar.COMPOUND_SENTIMENT_SCORE] == df[globalVar.COMPOUND_SENTIMENT_SCORE].max()]
+    min_df = df[df[globalVar.COMPOUND_SENTIMENT_SCORE] == df[globalVar.COMPOUND_SENTIMENT_SCORE].min()]
+
+    max_score = max_df[globalVar.COMPOUND_SENTIMENT_SCORE].tolist()
+    min_score = min_df[globalVar.COMPOUND_SENTIMENT_SCORE].tolist()
+    max_date = max_df[globalVar.REVIEWS_DATE].tolist()
+    min_date = min_df[globalVar.REVIEWS_DATE].tolist()
+    max_text = max_df[globalVar.REVIEWS_TEXT].tolist()
+    min_text = min_df[globalVar.REVIEWS_TEXT].tolist()
+
     df = df.groupby(globalVar.REVIEWS_DATE)[globalVar.COMPOUND_SENTIMENT_SCORE].mean()\
         .reset_index(name=globalVar.COMPOUND_SENTIMENT_SCORE)  
     fig = go.Figure([go.Scatter(x=df[globalVar.REVIEWS_DATE], y=df[globalVar.COMPOUND_SENTIMENT_SCORE])])
     fig.update_layout(yaxis_range=[-1,1])
     #fig = px.histogram(df, x=df[globalVar.REVIEWS_DATE], y=df[globalVar.COMPOUND_SENTIMENT_SCORE], histfunc='avg')
-    return fig.to_html()
+    return fig.to_html(), max_score[0], min_score[0], max_date[0], min_date[0], max_text[0], min_text[0]
+
+def getSentimentRatingOverall(p,n,neu,t):
+    dict_vals = {'positive':p,'negative':n,'neutral':neu}
+    dict_vals = dict(sorted(dict_vals.items(), reverse=True, key=lambda x:x[1]))
+    print(dict_vals)
+    keys = list(dict_vals.keys())
+    items = list(dict_vals.values())
+
+    sentiment = ''
+    if keys[0] == 'neutral':
+        sentiment = 'neutral'
+    elif keys[0] == 'positive':
+        sentiment = 'positive'
+    else:
+        sentiment = 'negative'
+    
+    # get percentage of domination
+    biggest = round(items[0]/t * 100, 4)
+    second =  round(items[1]/t * 100, 4)
+    last = round(items[2]/t * 100, 4)
+
+    fringe = ''
+    # check for fringe cases, i.e. biggest == second, biggest==second==last
+    if biggest == second:
+        fringe = 'There is a split of sentiment. There is a split between ' + keys[0] + " and " + keys[1]
+    
+    if biggest == 33.33 and second == 33.33 and last == 33.33:
+        fringe = 'There is a close equilibrium. All sentimental values are weighted closely.'
+    
+    domination_val = int(biggest-(second+last))
+    domination = ''
+
+    if domination_val in range(-40,-20):
+        domination = 'very slightly'
+    elif domination_val in range(-20,0):
+        domination = 'slightly'
+    elif domination_val in range(1,10):
+        domination = 'moderately'
+    elif domination_val in range(11,59):
+        domination = 'very'
+    elif domination_val in range(60,101):
+        domination = 'overwhelmingly'
+
+    domination += " " + sentiment
+
+    return sentiment, domination, biggest, fringe
 
 @app.route('/home', methods=("POST", "GET"))
 def homePage():
     hotel_df = pd.read_csv(session['analyzed_hotels'], index_col=0)
-    main_hotel_details = hotel_df.values.tolist()
+    # hotel_df = pd.read_csv('../csvs/bluefish_analyzedhotels.csv')
+    # display values
+    hotel_name = hotel_df[globalVar.NAME].iloc[0]
+    hotel_category = hotel_df[globalVar.CATEGORIES].iloc[0]
+    hotel_total_reviews = hotel_df[globalVar.REVIEWS_TOTAL].iloc[0]
+    hotel_average = hotel_df[globalVar.AVERAGE_RATING].iloc[0]
+    hotel_compound = '{:.2f}'.format(float(hotel_df[globalVar.COMPOUND_SENTIMENT_SCORE].iloc[0]))
+    hotel_compound = float(hotel_compound)
+    # compute hotel overall sentiment
+    hotel_overall = ''
+    if hotel_compound > 0:
+        hotel_overall = 'Positive. Visitors are inclined to have positive sentiment towards the hotel.'
+    elif hotel_overall < 0:
+        hotel_overall = "Negative. Visitors are inclined to have negative sentiment towards the hotel."
+    elif hotel_compound == 0:
+        hotel_overall = 'Neutral. Visitors generally have neither polarizing positive nor negative sentiment towards the hotel.'
+
     pcHeader = "Pie Chart" 
     rrHeader = "Review Rating"
     wcHeader = "Word Cloud"
     amHeader = "Amenities"
     asHeader = "Sentiment Over Time"
     accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
-    specific_sentiment_piechart,positiveSent,negativeSent,totalSent = sentimentPieChart(session['analyzed_reviews'])
+    specific_sentiment_piechart,positiveSent,negativeSent,totalSent,neutralSent = sentimentPieChart(session['analyzed_reviews'])
+    # compare num of sentiment values to get to the most dominant
+    sentiment, domination, biggest_sentiment, fringe = getSentimentRatingOverall(positiveSent,negativeSent,neutralSent,totalSent)
+    special_case = ''
+    if fringe:
+        special_case = fringe
+
     specific_keywords_wordcloud,specific_wordcloud = keywordsWordCloud(session['analyzed_hotels'])
+    # get len of keywords for dynamism
+    len_occur = len(specific_wordcloud)
     specific_averagerating_histogram,specific_averageRating = averageRatingHistogram(session['analyzed_reviews'],globalVar.REVIEWS_RATING)
     specific_amenities_wordcloud,specific_amenities = amenitiesWordCloud(session['analyzed_hotels'])
-    average_sentiment_over_time_graph = averageSentimentOverTime(session['analyzed_reviews'])
+    average_sentiment_over_time_graph, max_score, min_score, max_date, min_date, max_text, min_text = averageSentimentOverTime(session['analyzed_reviews'])
+
+    # check if amenities in the first place
+    if len(specific_amenities) < 0:
+        amenities_paragraph = ''
+    else:
+        specific_averageRating = "{:.2f}".format(specific_averageRating)
+        specific_amenities = list(specific_amenities.keys())
+        list_of_amenites_string = ', '.join(specific_amenities)
+
+        amenities_paragraph = "Similar to the word cloud above, but counts the most reoccuring amenities mentioned in the hotel\'s writen reviews.\n" 
+        amenities_paragraph += "The amnenities listed here are amenities that have been noted by reviewers and should be considered as a important characteristic of the hotel.\n"
+        amenities_paragraph += f"{list_of_amenites_string}\n"
+
+        if sentiment=='positive':
+            amenities_paragraph +='As the sentiment of the hotel is positive, these amenities of note could be considered as selling point of the hotel, or ones that considerably aid its positive score.'
+        elif sentiment=='negative':
+            amenities_paragraph +='As the sentiment of the hotel is negative, the hotel should look into these amenities as it could be discussed negatively in reviews as it it brought up frequently.'
+        
+    
 
     return render_template("home.html",
+                           hotel_name=hotel_name,
+                           hotel_category=hotel_category,
+                           hotel_total_reviews=hotel_total_reviews,
+                           hotel_average=hotel_average,
+                           hotel_compound=hotel_compound,
+                           hotel_overall=hotel_overall,
                            pcHeader=pcHeader,
                            rrHeader=rrHeader, 
                            wcHeader=wcHeader,
@@ -394,11 +499,31 @@ def homePage():
                            asHeader=asHeader,
                            accomo_piechart = accomo_piechart,
                            specific_sentiment_piechart = specific_sentiment_piechart,
+                           sentiment=sentiment,
+                           domination=domination,
+                           biggest_sentiment=biggest_sentiment,
+                           special_case=special_case,
+                           positiveSent=positiveSent,
+                           negativeSent=negativeSent,
+                           totalSent=totalSent,
+                           neutralSent=neutralSent,
                            specific_keywords_wordcloud = specific_keywords_wordcloud,
+                           specific_wordcloud=specific_wordcloud,
+                           len_occur=len_occur,
                            specific_averagerating_histogram = specific_averagerating_histogram,
+                           specific_averageRating=specific_averageRating,
                            specific_amenities_wordcloud=specific_amenities_wordcloud,
-                           main_hotel_details=main_hotel_details,
-                           average_sentiment_over_time_graph = average_sentiment_over_time_graph)
+                           amenities_paragraph=amenities_paragraph,
+                        #    main_hotel_details=main_hotel_details,
+                           average_sentiment_over_time_graph = average_sentiment_over_time_graph,
+                           max_score=max_score, 
+                           min_score=min_score, 
+                           ax_date=max_date,
+                           max_date=max_date, 
+                           min_date=min_date, 
+                           max_text=max_text, 
+                           min_text=min_text)
+    
 
 @app.route('/comparison', methods=("POST", "GET"))
 def comparisonPage():
@@ -599,8 +724,8 @@ def rankingAmenities(csvFile, correlationFile):
     amenities_df = amenities_df.sort_values(by=[globalVar.CORRCOEFFICIENT], ascending=False)
     
     # get top rated and bottom rated amenities 
-    top_rated_amenities = amenities_df[globalVar.CORRVARIABLE].head(3)
-    worst_rated_amenities = amenities_df[globalVar.CORRVARIABLE].tail(3)
+    top_rated_amenities = amenities_df[globalVar.CORRVARIABLE].head(5)
+    worst_rated_amenities = amenities_df[globalVar.CORRVARIABLE].tail(5)
 
     # plot graph
     rank_graph = px.bar(amenities_df, x=globalVar.CORRVARIABLE, y=globalVar.CORRCOEFFICIENT, title='Amenities Ranking')
@@ -706,4 +831,4 @@ def summaryPage():
     return render_template("summary.html")
 
 if __name__ == "__main__":    
-  app.run(debug=True)
+ app.run(debug=True)
