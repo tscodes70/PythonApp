@@ -26,3 +26,8 @@ def customFileMain(hoteldata:str):
     print(f"======= Runtime Information =======")
     print(f"Runtime: {runtime} seconds")
     print(f"===================================")
+
+# try:
+#     customFileMain('yotel.csv')
+# except:
+#     traceback.print_exc() 

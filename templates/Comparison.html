@@ -108,9 +108,38 @@
 <div class="card bg-light mb-3">
   <h4 class="card-header">Analysis Insights</h4>
   <div class="card-body">
-    <p class="card-text">{{awcresult | safe}}</p>
-    <p class="card-text">{{awcinsight | safe}}</p>
+    <p class="card-text">{{prresult | safe}}</p>
+    <p class="card-text">{{prinsight | safe}}</p>
   </div>
 </div>
 <!--end of amenities-->
+
+<!-- Amenities comparison, showing potential amenties to implement -->
+<div class="alert alert-success mt-5" role="alert">
+  <h4 class="alert-heading">{{ prComparisonHeader }}</h4>
+  <p>{{prbg | safe}}</p>
+  <hr>
+</div>
+<div class="row pt-3">
+  <!-- Hotel x amenities -->
+  <div class="col d-flex flex-column align-items-center">
+    <h4>{{hotelname}}</h4>
+    <img src="data:image/png;base64,{{ specific_amenities_wordcloud }}" alt="Pricing Histogram">
+  </div>
+  <!-- All amenties -->
+  <div class="col d-flex flex-column align-items-center">
+    <h4>All hotels</h4>
+    <img src="data:image/png;base64,{{ all_amenities_wordcloud }}" alt="Pricing Histogram">
+  </div>
+</div>
+<!-- Amenties insights -->
+<div class="card bg-light mb-3">
+  <h4 class="card-header">Analysis Insights</h4>
+  <div class="card-body">
+    <p class="card-text">{{prresult | safe}}</p>
+    <p class="card-text">{{prinsight | safe}}</p>
+  </div>
+</div>
+<!--end of amenities-->
+
 {% endblock %}
