@@ -199,6 +199,8 @@ def createMap():
         center={"lat": 37.0902, "lon": -95.7129},
         scope="usa"
     )
+
+    fig.update_layout(dragmode=False)
     # Convert the map to HTML
     map_div = fig.to_html(full_html=False)
     return map_div, max_review_val, max_province, min_review_val, min_province
@@ -443,6 +445,8 @@ def homePage():
     hotel_name = hotel_df[globalVar.NAME].iloc[0]
     hotel_category = hotel_df[globalVar.CATEGORIES].iloc[0]
     hotel_total_reviews = hotel_df[globalVar.REVIEWS_TOTAL].iloc[0]
+    hotel_review_sum_g = hotel_df[globalVar.GREVIEWS_SUMMARY].iloc[0]
+    hotel_review_sum_b = hotel_df[globalVar.BREVIEWS_SUMMARY].iloc[0]
     hotel_average = hotel_df[globalVar.AVERAGE_RATING].iloc[0]
     hotel_compound = '{:.2f}'.format(float(hotel_df[globalVar.COMPOUND_SENTIMENT_SCORE].iloc[0]))
     hotel_compound = float(hotel_compound)
@@ -460,7 +464,7 @@ def homePage():
     wcHeader = "Word Cloud"
     amHeader = "Amenities"
     asHeader = "Sentiment Over Time"
-    accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+    # accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
     specific_sentiment_piechart,positiveSent,negativeSent,totalSent,neutralSent = sentimentPieChart(session['analyzed_reviews'])
     # compare num of sentiment values to get to the most dominant
     sentiment, domination, biggest_sentiment, fringe = getSentimentRatingOverall(positiveSent,negativeSent,neutralSent,totalSent)
@@ -488,9 +492,9 @@ def homePage():
         amenities_paragraph += f"{list_of_amenites_string}\n"
 
         if sentiment=='positive':
-            amenities_paragraph +='As the sentiment of the hotel is positive, these amenities of note could be considered as selling point of the hotel, or ones that considerably aid its positive score.'
+            amenities_paragraph +='As the sentiment of the hotel is positive, these amenities of note could be considered as selling point of the hotel, or ones that considerably aid its positive score.\n'
         elif sentiment=='negative':
-            amenities_paragraph +='As the sentiment of the hotel is negative, the hotel should look into these amenities as it could be discussed negatively in reviews as it it brought up frequently.'
+            amenities_paragraph +='As the sentiment of the hotel is negative, the hotel should look into these amenities as it could be discussed negatively in reviews as it it brought up frequently.\n'
         
     
 
@@ -498,6 +502,8 @@ def homePage():
                            hotel_name=hotel_name,
                            hotel_category=hotel_category,
                            hotel_total_reviews=hotel_total_reviews,
+                           hotel_review_sum_g=hotel_review_sum_g,
+                           hotel_review_sum_b=hotel_review_sum_b,
                            hotel_average=hotel_average,
                            hotel_compound=hotel_compound,
                            hotel_overall=hotel_overall,
@@ -506,7 +512,7 @@ def homePage():
                            wcHeader=wcHeader,
                            amHeader=amHeader,
                            asHeader=asHeader,
-                           accomo_piechart = accomo_piechart,
+                        #    accomo_piechart = accomo_piechart,
                            specific_sentiment_piechart = specific_sentiment_piechart,
                            sentiment=sentiment,
                            domination=domination,
@@ -797,13 +803,16 @@ def generalPage():
     provinces, max_province_histogram, max_count, min_province_histogram, min_count = provinceHistogram()
     accomo_piechart, top_categories = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
     score_heatmap, top_cor, top_cor_val = scoringHeatmap(globalVar.ANALYSISHOTELOUTPUTFULLFILE, globalVar.CORRFULLFILE)
+
+    top_cor_val = '{:.3f}'.format(top_cor_val)
+    top_cor_val = float(top_cor_val)
     
     mpHeader = "Map of Hotels in USA against the number of ratings"
     acHeader = "Categories of the accomodations"
     pcHeader = "Pie Chart" 
     rrHeader = "Review Rating"
     wcHeader = "Word Cloud"
-    pvHeader = "Number of hotels per Provinces in USA<"
+    pvHeader = "Number of hotels per Provinces in USA"
     amHeader = "Amenities"
     smHeader = "Scoring Heatmap"
     aaHeader = "Average Rating of the accomodations"
@@ -818,21 +827,25 @@ def generalPage():
     all_gs_rank, best_factor, worst_factor = rankingGeneral(globalVar.CORRFULLFILE, GENERAL)
     all_season_rank, best_season, worst_season = rankingGeneral(globalVar.CORRFULLFILE, SEASONS)
 
+    all_averageRating = '{:.2f}'.format(all_averageRating)
+
     map_desc = "This is a map to indicate the number of reviews occurring in any given states of the USA. The brighter the value, the greater the amount of reviews occuring.\n"
     map_desc += f"The province with the greatest amount of visitors is {max_province} with {max_reviews}.\n"
     map_desc += f"The province with the greatest amount of visitors is {min_province} with {min_reviews}.\n"
     map_desc += f"Hotels should be aware that a large majority of reviews come from {max_province} visitors. It may indicate a well performing ground for hotel businesses."
-    map_desc += f" On the other hand, hotels owners should note that {min_province} has not much reviews, indicating that they may be a lack of businesses for hotels, or lack of hotels."
+    map_desc += f" On the other hand, hotels owners should note that {min_province} has not much reviews, indicating that they may be a lack of businesses for hotels, or lack of hotels.\n"
+    map_desc = map_desc.replace('\n', '<br>')
 
     top_categories_string = ""
     top_categories_string = ', '.join(top_categories)
     top_categories_count = list(map(str, top_categories.values()))
-    top_categories_string += "They appeared:"
+    top_categories_string += "\nThey appeared: "
     top_categories_string += ', '.join(top_categories_count)
-    top_categories_string += ' times respectively.'
-    accom_desc = "This is a piechart indicating which categories are most common among each hotel. They are listed here:"
+    top_categories_string += ' times respectively.\n'
+    accom_desc = "This is a piechart indicating which categories are most common among each hotel. They are listed here:\n"
     accom_desc += top_categories_string
-    accom_desc += "Hotel owners should keep track as to which type of accomodation is most popular whith reviewers."
+    accom_desc += "\nHotel owners should keep track as to which type of accomodation is most popular whith reviewers."
+    accom_desc = accom_desc.replace('\n', '<br>')
 
     return render_template("general.html",
                            hotel_name=hotel_name,

@@ -37,7 +37,7 @@
     <h3>{{ mpHeader }}</h3>
     <div>{{ map_div | safe }}</div><br>
     <b>Heatmap of Occuring Reviews</b>
-    <p>{{ map_desc }}</p>
+    <p>{{ map_desc| safe }}</p>
   </div>
 </div>
 <div class="row">
@@ -45,7 +45,7 @@
     <h3>{{ acHeader }}</h3>
     <div>{{ accomo_piechart|safe }}</div>
     <b>Piechart of most common categories</b>
-    <p>{{ accom_desc }}</p>
+    <p>{{ accom_desc | safe }}</p>
   </div>
 </div>
 <div class="row">
@@ -54,14 +54,14 @@
     <img src="data:image/png;base64,{{ all_keywords_wordcloud }}" alt="Word Cloud">
     <br>
     <b>Word Cloud Count</b>
-    <p>The top {{ len_occur }} most reoccuring words in this hotel's review are:</p>
+    <p>The top {{ len_occur }} most reoccuring words:</p>
     <p>{% for word, occur in all_wordcloud.items() %}{{ word }} : {{ occur }}, {% endfor %}</p>
     <p>Hotels can look into these words as they are the most discussed words that appear in their reviews, which may give insight of the characteristics of their hotel from 
       a viewpoint of a visitor.
     </p>
   </div>
   <div class="col">
-    <h3>{{ pv_Header }}</h3>
+    <h3>{{ pvHeader }}</h3>
     <div>{{ provinces|safe }}</div>
     <b>Count of Hotels</b>
     <p>A bar graph counting how many hotels exists within any given province within the dataset in the USA.</p>
@@ -73,7 +73,7 @@
 <div class="row">
   <div class="col">
     <h3>{{ smHeader }}</h3>
-    <img src="data:image/png;base64,{{ score_heatmap }}" alt="Heat Map">
+    <img class="heatmap"max-width="50vw" src="data:image/png;base64,{{ score_heatmap }}" alt="Heat Map">
     <br>
     <b>Score correlation accross provinces</b>
     <p>A heat map that shows the given correlation of the different scoring methods of a hotel, averaged by score accross provinces. The greater the value, the greater the correlation.</p>
