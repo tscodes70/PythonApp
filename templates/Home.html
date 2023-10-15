@@ -64,50 +64,72 @@
 <br>
 <!--Home Page-->
 <h3>{{ pcHeader }}</h3>
-  <div>{{ specific_sentiment_piechart |safe }}</div>
-  <b>Sentiment Pie Chart</b>
-  <p>A pie chart showing the percentage of overall sentiments it has.</p>
-  <p>This hotel has {{ positiveSent }} postive values, {{ negativeSent }} negative values, {{ neutralSent}} neutral
-    values, out of {{ totalSent }} sentiment values.</p>
-  <p>The main sentiment of this hotel is {{ domination }}. It is {{ sentiment }} at {{ biggest_sentiment }}%. {{ special_case }}</p>
+<div>{{ specific_sentiment_piechart |safe }}</div>
+<div class="card">
+  <div class="card-body">
+    <b>Sentiment Pie Chart</b>
+    <p>A pie chart showing the percentage of overall sentiments it has.</p>
+    <p>This hotel has {{ positiveSent }} postive values, {{ negativeSent }} negative values, {{ neutralSent}} neutral
+      values, out of {{ totalSent }} sentiment values.</p>
+    <p>The main sentiment of this hotel is {{ domination }}. It is {{ sentiment }} at {{ biggest_sentiment }}%. {{
+      special_case }}</p>
+  </div>
+</div>
 <h3>{{ wcHeader }}</h3>
 <img src="data:image/png;base64,{{ specific_keywords_wordcloud }}" alt="Word Cloud">
-  <br>
-  <b>Word Cloud Count</b>
-  <p>This is a word cloud of the most reoccuring items within the reviews of the hotels. The bigger the word, the 
-    more the word has appeared in the hotel's written reviews</p>
-  <p>The top {{ len_occur }} most reoccuring words in this hotel's review are:</p>
-  <p>{% for word, occur in specific_wordcloud.items() %}{{ word }} : {{ occur }}, {% endfor %}</p>
-  <p>Hotels can look into these words as they are the most discussed words that appear in their reviews, which may give insight of the characteristics of their hotel from 
-    a viewpoint of a visitor.
-  </p>
+<br>
+<div class="card">
+  <div class="card-body">
+    <b>Word Cloud Count</b>
+    <p>This is a word cloud of the most reoccuring items within the reviews of the hotels. The bigger the word, the
+      more the word has appeared in the hotel's written reviews</p>
+    <p>The top {{ len_occur }} most reoccuring words in this hotel's review are:</p>
+    <p>{% for word, occur in specific_wordcloud.items() %}{{ word }} : {{ occur }}, {% endfor %}</p>
+    <p>Hotels can look into these words as they are the most discussed words that appear in their reviews, which may
+      give insight of the characteristics of their hotel from
+      a viewpoint of a visitor.
+    </p>
+  </div>
+</div>
 <h3>{{ rrHeader }}</h3>
-  <div>{{ specific_averagerating_histogram | safe }}</div>
-  <b>Review Rating Count</b>
-  <p>A bar graph displaying the which score was given the most for the hotel.</p>
-  <p>From the graph, average rating of all reviews of the hotel is {{ specific_averageRating }}.</p>
+<div>{{ specific_averagerating_histogram | safe }}</div>
+<div class="card">
+  <div class="card-body">
+    <b>Review Rating Count</b>
+    <p>A bar graph displaying the which score was given the most for the hotel.</p>
+    <p>From the graph, average rating of all reviews of the hotel is {{ specific_averageRating }}.</p>
+  </div>
+</div>
 <h3>{{ amHeader }}</h3>
-  <img src="data:image/png;base64,{{ specific_amenities_wordcloud }}" alt="Word Cloud">
-  <br>
-  <b>Word Cloud Count for Amenities</b>
-  <p>{{ amenities_paragraph | safe }}</p>
+<img src="data:image/png;base64,{{ specific_amenities_wordcloud }}" alt="Word Cloud">
+<br>
+<div class="card">
+  <div class="card-body">
+    <b>Word Cloud Count for Amenities</b>
+    <p>{{ amenities_paragraph | safe }}</p>
+  </div>
+</div>
 <h3>{{ asHeader }}</h3>
-  <div>{{ average_sentiment_over_time_graph | safe }}</div>
-  <b>Sentiment Timeline</b>
-  <p>This is a line graph charting the average sentiment score of the hotel over the given periods of its review.</p>
-  <div class="card">
-    <div class="card-body">
-      <p>The highest scoring sentiment was on {{ max_date }} with a score of {{ max_score }}</p>
-      <p>The reviewer gave the following review:</p>
-      <p>{{ max_text }}</p>
-    </div>
+<div>{{ average_sentiment_over_time_graph | safe }}</div>
+<div class="card">
+  <div class="card-body">
+    <b>Sentiment Timeline</b>
+    <p>This is a line graph charting the average sentiment score of the hotel over the given periods of its review.</p>
   </div>
-  <div class="card">
-    <div class="card-body">
-      <p>The lowest scoring sentiment was on {{ min_date }} with a score of {{ min_score }}</p>
-      <p>The reviewer gave the following review:</p>
-      <p>{{ min_text }}</p>
-    </div>
+</div>
+<div class="card">
+  <div class="card-body">
+    <p>The highest scoring sentiment was on {{ max_date }} with a score of {{ max_score }}</p>
+    <p>The reviewer gave the following review:</p>
+    <p>{{ max_text }}</p>
   </div>
+</div>
+<div class="card">
+  <div class="card-body">
+    <p>The lowest scoring sentiment was on {{ min_date }} with a score of {{ min_score }}</p>
+    <p>The reviewer gave the following review:</p>
+    <p>{{ min_text }}</p>
+  </div>
+</div>
 </div>
 {% endblock %}
