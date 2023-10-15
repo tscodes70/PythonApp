@@ -3,6 +3,7 @@ from flask_bootstrap import Bootstrap
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.express as px
+# import statsmodels.api as sm
 import os
 from werkzeug.utils import secure_filename
 from wordcloud import WordCloud
@@ -18,6 +19,7 @@ import contextily as ctx
 import geopandas as gpd 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import geopandas as gpd
+from itertools import islice
 import globalVar,ast
 from startCustom import customFileMain
 
@@ -78,7 +80,7 @@ def accomodationPieChart(csvFile):
     # Convert the chart to an HTML div
     pie_chart_div = pie_chart.to_html(full_html=False)
 
-    return pie_chart_div
+    return pie_chart_div, top_categories.to_dict()
 
 def keywordsWordCloud(csvFile):
     df = pd.read_csv(csvFile)
@@ -157,20 +159,27 @@ def pricingHistogram(csvFile,dfHeader):
     return pricing_histogram,histogram_data.mean()
 
 def scatterplot():
-    scattermap = px.scatter(df, x=globalVar.AVERAGE_RATING, y=globalVar.COMPOUND_SENTIMENT_SCORE)
+    scattermap = px.scatter(df, x=globalVar.AVERAGE_RATING, y=globalVar.COMPOUND_SENTIMENT_SCORE, trendline='ols')
     return scattermap.to_html()
 
 def provinceHistogram():
     count_province = df.groupby([globalVar.PROVINCE]).size().reset_index(name='Number of Hotels')
+    max_province = count_province[globalVar.PROVINCE].max()
+    max_province_count = count_province['Number of Hotels'].max()
+    min_province = count_province[globalVar.PROVINCE].min()
+    min_province_count = count_province['Number of Hotels'].min()
     provinces = px.bar(count_province, x='province', y='Number of Hotels')
     provinces.update_xaxes(tickangle=65)
-    return provinces.to_html()
+    return provinces.to_html(), max_province, max_province_count, min_province, min_province_count
 
-def map():
-    grouped_df = df.groupby('province')['reviews.total'].sum().reset_index()
+def createMap():
+    grouped_df = df.groupby(globalVar.PROVINCE)[globalVar.REVIEWS_TOTAL].sum().reset_index()
+    max_province = grouped_df[globalVar.PROVINCE].max()
+    max_review_val = grouped_df[globalVar.REVIEWS_TOTAL].max()
+    min_province = grouped_df[globalVar.PROVINCE].min()
+    min_review_val = grouped_df[globalVar.REVIEWS_TOTAL].min()
     # Merge the data based on 'Province' and calculate the total number of reviews
     merged_data = gdf.merge(grouped_df, left_on='STUSPS', right_on='province', how='left')
-
     # Normalize the data if needed
     # Here, we are assuming you have a column 'Total Reviews' in your CSV data
     # You may want to scale the data to fit the color scale properly
@@ -192,7 +201,7 @@ def map():
     )
     # Convert the map to HTML
     map_div = fig.to_html(full_html=False)
-    return map_div
+    return map_div, max_review_val, max_province, min_review_val, min_province
 
 def getSentimentInsight(hotelname:str,specificList:list,allList:list):
     background = ("<b>Positive Sentiment:</b> This category is used to describe customer reviews that express a favorable or optimistic attitude. It often indicates happiness, satisfaction, approval, or agreement.\n" +
@@ -529,7 +538,7 @@ def homePage():
 def comparisonPage():
     hotel_df = pd.read_csv(session['analyzed_hotels'], index_col=0)
     hotelname = hotel_df[globalVar.NAME].to_string(index=False)
-    map_div = map()
+    map_div = createMap()
     scattermap = scatterplot()
     provinces = provinceHistogram()
     accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
@@ -653,7 +662,7 @@ def keywordsWordCloudSpecific(csvFile, selector):
     plt.savefig(img_buffer, format='png')
     img_buffer.seek(0)
     wordcloud = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
-    return wordcloud
+    return wordcloud, word_freq
 
 def scoringHeatmap(csvFile, correlationFile):
     # get the provinces in the given analyzed hotels into a list
@@ -691,9 +700,20 @@ def scoringHeatmap(csvFile, correlationFile):
     final_df = final_df.assign(reviews=avg_reviews_per_hotel)
     final_df = final_df.drop('provinces', axis=1)
     
+    value_len = len(final_df.columns.tolist())
     # correlate the scores of all the coeffiecient
     hmap = final_df.corr()
 
+    stack = hmap.unstack()
+    stack_ordered = stack.sort_values(kind="quicksort", ascending=False)
+    
+    top_vals = stack_ordered.head(value_len + 1)
+    cor_vals = top_vals.iloc[value_len]
+    cor_var = ''
+    for x in top_vals.index:
+        cor_var = x
+    # print(cor_vals)
+    # print(cor_var)
     # plot the heatmap
     plt.figure(figsize=(10,10))
     column_head = ['Provinces Coefficient', 'Sentiment Score', 'Average Rating', 'Reviews']
@@ -707,7 +727,7 @@ def scoringHeatmap(csvFile, correlationFile):
     img_buffer.seek(0)
     heatmap = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
     
-    return heatmap
+    return heatmap, cor_var, cor_vals
 
 def rankingAmenities(csvFile, correlationFile):
     # read files
@@ -757,28 +777,33 @@ def generalPage():
     # check if theres a POST request from dropdown list
     hotel_name = df[globalVar.NAME].unique()
     all_keywords_wordcloud = ''
+    len_occur = 10
     if request.method == 'POST':
         selected_hotel = request.form['hotelName-dropdown']
         
         if selected_hotel:
-            all_keywords_wordcloud = keywordsWordCloudSpecific(globalVar.ANALYSISHOTELOUTPUTFULLFILE, selected_hotel)
+            all_keywords_wordcloud,all_wordcloud = keywordsWordCloudSpecific(globalVar.ANALYSISHOTELOUTPUTFULLFILE, selected_hotel)
+            all_wordcloud = dict(islice(all_wordcloud.items(), 0,len_occur))
         else:
             all_keywords_wordcloud,all_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+            all_wordcloud = dict(islice(all_wordcloud.items(), 0,len_occur))
     else:
         selected_hotel = ''
         all_keywords_wordcloud,all_wordcloud = keywordsWordCloud(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+        all_wordcloud = dict(islice(all_wordcloud.items(), 0,len_occur))
         
-    map_div = map()
+    map_div, max_reviews, max_province, min_reviews, min_province = createMap()
     scattermap = scatterplot()
-    provinces = provinceHistogram()
-    accomo_piechart = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
-    score_heatmap = scoringHeatmap(globalVar.ANALYSISHOTELOUTPUTFULLFILE, globalVar.CORRFULLFILE)
+    provinces, max_province_histogram, max_count, min_province_histogram, min_count = provinceHistogram()
+    accomo_piechart, top_categories = accomodationPieChart(globalVar.ANALYSISHOTELOUTPUTFULLFILE)
+    score_heatmap, top_cor, top_cor_val = scoringHeatmap(globalVar.ANALYSISHOTELOUTPUTFULLFILE, globalVar.CORRFULLFILE)
     
     mpHeader = "Map of Hotels in USA against the number of ratings"
     acHeader = "Categories of the accomodations"
     pcHeader = "Pie Chart" 
     rrHeader = "Review Rating"
     wcHeader = "Word Cloud"
+    pvHeader = "Number of hotels per Provinces in USA<"
     amHeader = "Amenities"
     smHeader = "Scoring Heatmap"
     aaHeader = "Average Rating of the accomodations"
@@ -793,6 +818,22 @@ def generalPage():
     all_gs_rank, best_factor, worst_factor = rankingGeneral(globalVar.CORRFULLFILE, GENERAL)
     all_season_rank, best_season, worst_season = rankingGeneral(globalVar.CORRFULLFILE, SEASONS)
 
+    map_desc = "This is a map to indicate the number of reviews occurring in any given states of the USA. The brighter the value, the greater the amount of reviews occuring.\n"
+    map_desc += f"The province with the greatest amount of visitors is {max_province} with {max_reviews}.\n"
+    map_desc += f"The province with the greatest amount of visitors is {min_province} with {min_reviews}.\n"
+    map_desc += f"Hotels should be aware that a large majority of reviews come from {max_province} visitors. It may indicate a well performing ground for hotel businesses."
+    map_desc += f" On the other hand, hotels owners should note that {min_province} has not much reviews, indicating that they may be a lack of businesses for hotels, or lack of hotels."
+
+    top_categories_string = ""
+    top_categories_string = ', '.join(top_categories)
+    top_categories_count = list(map(str, top_categories.values()))
+    top_categories_string += "They appeared:"
+    top_categories_string += ', '.join(top_categories_count)
+    top_categories_string += ' times respectively.'
+    accom_desc = "This is a piechart indicating which categories are most common among each hotel. They are listed here:"
+    accom_desc += top_categories_string
+    accom_desc += "Hotel owners should keep track as to which type of accomodation is most popular whith reviewers."
+
     return render_template("general.html",
                            hotel_name=hotel_name,
                            selected_hotel=selected_hotel,
@@ -801,6 +842,7 @@ def generalPage():
                            pcHeader=pcHeader,
                            rrHeader=rrHeader, 
                            wcHeader=wcHeader,
+                           pvHeader=pvHeader,
                            amHeader=amHeader,
                            smHeader=smHeader,
                            aaHeader=aaHeader,
@@ -809,16 +851,27 @@ def generalPage():
                            gsHeader=gsHeader,
                            ssHeader=ssHeader,                          
                            accomo_piechart = accomo_piechart,
+                           accom_desc=accom_desc,
                            scattermap=scattermap, 
-                           provinces=provinces, 
+                           provinces=provinces,
+                           max_province_histogram=max_province_histogram,
+                           max_count=max_count,
+                           min_province_histogram=min_province_histogram,
+                           min_count=min_count,
                            all_sentiment_piechart = all_sentiment_piechart,
+                           len_occur=len_occur,
                            all_keywords_wordcloud = all_keywords_wordcloud,
+                           all_wordcloud = all_wordcloud,
                            all_averagerating_histogram = all_averagerating_histogram,
+                           all_averageRating=all_averageRating,
                            all_amenities_rank = all_amenities_rank,
                            all_gs_rank = all_gs_rank,
                            all_season_rank = all_season_rank,
                            score_heatmap=score_heatmap,
+                           top_cor=top_cor,
+                           top_cor_val=top_cor_val,
                            map_div=map_div,
+                           map_desc=map_desc,
                            best_amenities=best_amenities,
                            worst_amenities=worst_amenities,
                            best_factor=best_factor,
@@ -831,4 +884,4 @@ def summaryPage():
     return render_template("summary.html")
 
 if __name__ == "__main__":    
- app.run(debug=True)
+  app.run(debug=True)

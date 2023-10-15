@@ -37,8 +37,7 @@
     <h3>{{ mpHeader }}</h3>
     <div>{{ map_div | safe }}</div><br>
     <b>Heatmap of Occuring Reviews</b>
-    <p>This is a map to indicate the number of reviews occurring in any given states of the USA. The brighter the value,
-      the greater the amount of reviews occuring.</p>
+    <p>{{ map_desc }}</p>
   </div>
 </div>
 <div class="row">
@@ -46,7 +45,7 @@
     <h3>{{ acHeader }}</h3>
     <div>{{ accomo_piechart|safe }}</div>
     <b>Piechart of most common categories</b>
-    <p>This is a piechart indicating which categories are most common among each hotel.</p>
+    <p>{{ accom_desc }}</p>
   </div>
 </div>
 <div class="row">
@@ -55,14 +54,20 @@
     <img src="data:image/png;base64,{{ all_keywords_wordcloud }}" alt="Word Cloud">
     <br>
     <b>Word Cloud Count</b>
-    <p>A word cloud showing which words occur the most among all reviews submitted by users in the dataset. Select a
-      hotel above to view its' corresponding word cloud count.</p>
+    <p>The top {{ len_occur }} most reoccuring words in this hotel's review are:</p>
+    <p>{% for word, occur in all_wordcloud.items() %}{{ word }} : {{ occur }}, {% endfor %}</p>
+    <p>Hotels can look into these words as they are the most discussed words that appear in their reviews, which may give insight of the characteristics of their hotel from 
+      a viewpoint of a visitor.
+    </p>
   </div>
   <div class="col">
-    <h3>Number of hotels per Provinces in USA</h3>
+    <h3>{{ pv_Header }}</h3>
     <div>{{ provinces|safe }}</div>
     <b>Count of Hotels</b>
     <p>A bar graph counting how many hotels exists within any given province within the dataset in the USA.</p>
+    <p>The province with the most hotels is {{ max_province_histogram }} at {{ max_count }} hotels.</p>
+    <p>Conversely, the province with the least amount hotel is {{ min_province_histogram }} at {{ min_count }}.</p>
+    <p>Should hotel owners choose to move, this graph should show which provinces are overstaurated with hotels, and provinces which lack them.</p>
   </div>
 </div>
 <div class="row">
@@ -71,8 +76,9 @@
     <img src="data:image/png;base64,{{ score_heatmap }}" alt="Heat Map">
     <br>
     <b>Score correlation accross provinces</b>
-    <p>A heat map that shows the given correlation of the different scoring methods of a hotel, averaged by score
-      accross provinces. The greater the value, the greater the correlation.</p>
+    <p>A heat map that shows the given correlation of the different scoring methods of a hotel, averaged by score accross provinces. The greater the value, the greater the correlation.</p>
+    <p>The number ranges from 1 to -1, positive values are postive correlations and negative vice versa.</p>
+    <p>The top correlation is {{ top_cor }} at {{ top_cor_val}}. Hotel owners are expected to pay attention to these values as improving them would result in a better score.</p>
   </div>
 </div>
 <div class="row">
@@ -92,6 +98,7 @@
     <div>{{ all_averagerating_histogram|safe }}</div>
     <b>Average Ranking of all Hotel</b>
     <p>A histogram showing the average hotel review score accross the dataset.</p>
+    <p>Across the dataset, the average score is {{ all_averageRating }}.</p>
   </div>
 </div>
 <div class="row">
@@ -100,6 +107,7 @@
     <div>{{ scattermap|safe }}</div>
     <b>Plot Graph Score Rating.</b>
     <p>A plot graph of the average rating of all hotels againsts their compound sentiment score.</p>
+    <p>A rising line indicates a positive correlation, while falling line indicates a negative correlation.</p>
   </div>
 </div>
 <div class="row">
