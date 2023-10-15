@@ -7,7 +7,7 @@ Created on Mon Oct  9 09:54:19 2023
 
 import csv,os
 from selenium import webdriver
-import time, globalVar
+import time,globalVar
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException

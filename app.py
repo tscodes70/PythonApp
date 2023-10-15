@@ -558,8 +558,8 @@ def comparisonPage():
     prComparisonHeader = "Pricing Comparison"
 
     # Comparisons Charts
-    all_sentiment_piechart,all_positiveSent,all_negativeSent,all_totalSent = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
-    specific_sentiment_piechart,specific_positiveSent,specific_negativeSent,specific_totalSent = sentimentPieChart(session['analyzed_reviews'])
+    all_sentiment_piechart,all_positiveSent,all_negativeSent,all_totalSent,all_neutral = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
+    specific_sentiment_piechart,specific_positiveSent,specific_negativeSent,specific_totalSent,specific_neutral = sentimentPieChart(session['analyzed_reviews'])
     sentbg,sentresult,sentinsight=getSentimentInsight(hotelname,[specific_positiveSent,specific_negativeSent,specific_totalSent],[all_positiveSent,all_negativeSent,all_totalSent])
     sentbg = sentbg.replace('\n', '<br>')
     sentresult = sentresult.replace('\n', '<br>')
@@ -812,7 +812,7 @@ def generalPage():
     gsHeader = "General Factors Coefficient Score"
     ssHeader = "Seasonal Ranking"
 
-    all_sentiment_piechart = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
+    all_sentiment_piechart,all_positiveSent,all_negativeSent,all_totalSent,all_neutral = sentimentPieChart(globalVar.ANALYSISREVIEWOUTPUTFULLFILE)
     all_averagerating_histogram,all_averageRating = averageRatingHistogram(globalVar.ANALYSISHOTELOUTPUTFULLFILE, globalVar.AVERAGE_RATING)
     all_amenities_rank, best_amenities, worst_amenities = rankingAmenities(globalVar.ANALYSISREVIEWOUTPUTFULLFILE, globalVar.CORRFULLFILE)
     all_gs_rank, best_factor, worst_factor = rankingGeneral(globalVar.CORRFULLFILE, GENERAL)
