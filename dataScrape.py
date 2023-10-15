@@ -7,7 +7,7 @@ Created on Mon Oct  9 09:54:19 2023
 
 import csv,os
 from selenium import webdriver
-import globalVar
+import time,globalVar
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
@@ -122,6 +122,7 @@ def dataScraper():
         csvWriter = csv.writer(csvFile)
         
         while True:
+            time.sleep(6)
             try:
                 expand_review = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.XPATH, ".//div[contains(@data-test-target, 'expand-review')]"))
